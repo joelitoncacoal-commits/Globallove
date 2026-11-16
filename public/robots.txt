@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.globallove.com/sitemap.xml
+Sitemap: https://globallove.vercel.app/sitemap.xml

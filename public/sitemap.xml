@@ -1,180 +1,165 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://www.globallove.com/</loc>
+    <loc>https://globallove.vercel.app/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/descobrir</loc>
+    <loc>https://globallove.vercel.app/mapa</loc>
     <changefreq>daily</changefreq>
-    <priority>0.95</priority>
+    <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/mapa</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://www.globallove.com/mural</loc>
+    <loc>https://globallove.vercel.app/mural</loc>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/matches</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://www.globallove.com/conversas</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://www.globallove.com/entrar</loc>
+    <loc>https://globallove.vercel.app/entrar</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.80</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/planos</loc>
+    <loc>https://globallove.vercel.app/planos</loc>
     <changefreq>weekly</changefreq>
     <priority>0.80</priority>
   </url>
 
   <!-- Paises Hubs -->
   <url>
-    <loc>https://www.globallove.com/pais/brasil</loc>
+    <loc>https://globallove.vercel.app/pais/brasil</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.80</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/pais/portugal</loc>
+    <loc>https://globallove.vercel.app/pais/portugal</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.80</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/pais/argentina</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://www.globallove.com/pais/espanha</loc>
+    <loc>https://globallove.vercel.app/pais/argentina</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/pais/franca</loc>
+    <loc>https://globallove.vercel.app/pais/espanha</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/pais/japao</loc>
+    <loc>https://globallove.vercel.app/pais/franca</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/pais/estados-unidos</loc>
+    <loc>https://globallove.vercel.app/pais/japao</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/pais/italia</loc>
+    <loc>https://globallove.vercel.app/pais/estados-unidos</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/pais/alemanha</loc>
+    <loc>https://globallove.vercel.app/pais/italia</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://globallove.vercel.app/pais/alemanha</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <!-- Cidades Hubs -->
   <url>
-    <loc>https://www.globallove.com/cidade/sao-paulo</loc>
+    <loc>https://globallove.vercel.app/cidade/sao-paulo</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/cidade/rio-de-janeiro</loc>
+    <loc>https://globallove.vercel.app/cidade/rio-de-janeiro</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/cidade/lisboa</loc>
+    <loc>https://globallove.vercel.app/cidade/lisboa</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/cidade/buenos-aires</loc>
+    <loc>https://globallove.vercel.app/cidade/buenos-aires</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/cidade/madrid</loc>
+    <loc>https://globallove.vercel.app/cidade/madrid</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/cidade/paris</loc>
+    <loc>https://globallove.vercel.app/cidade/paris</loc>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
 
   <!-- Guias Oficiais -->
   <url>
-    <loc>https://www.globallove.com/guias</loc>
+    <loc>https://globallove.vercel.app/guias</loc>
     <changefreq>weekly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/guias/namoro-online-conhecer-pessoas</loc>
+    <loc>https://globallove.vercel.app/guias/namoro-online-conhecer-pessoas</loc>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/guias/como-iniciar-uma-conversa</loc>
+    <loc>https://globallove.vercel.app/guias/como-iniciar-uma-conversa</loc>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/guias/seguranca-no-namoro-online</loc>
+    <loc>https://globallove.vercel.app/guias/seguranca-no-namoro-online</loc>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/guias/como-criar-perfil-de-namoro</loc>
+    <loc>https://globallove.vercel.app/guias/como-criar-perfil-de-namoro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/guias/conhecer-pessoas-de-outros-paises</loc>
+    <loc>https://globallove.vercel.app/guias/conhecer-pessoas-de-outros-paises</loc>
     <changefreq>monthly</changefreq>
     <priority>0.70</priority>
   </url>
 
   <!-- Institucional -->
   <url>
-    <loc>https://www.globallove.com/sobre</loc>
+    <loc>https://globallove.vercel.app/sobre</loc>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/seguranca</loc>
+    <loc>https://globallove.vercel.app/seguranca</loc>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/privacidade</loc>
+    <loc>https://globallove.vercel.app/privacidade</loc>
     <changefreq>monthly</changefreq>
     <priority>0.50</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/termos</loc>
+    <loc>https://globallove.vercel.app/termos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.50</priority>
   </url>
   <url>
-    <loc>https://www.globallove.com/contato</loc>
+    <loc>https://globallove.vercel.app/contato</loc>
     <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>

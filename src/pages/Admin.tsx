@@ -400,8 +400,10 @@ export const Admin: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40">
-                  <span className="text-muted-foreground">Domínio Principal:</span>
-                  <span className="font-bold text-foreground">globallove.com</span>
+                  <span className="text-muted-foreground">Domínio Ativo:</span>
+                  <span className="font-bold text-foreground">
+                    {typeof window !== 'undefined' ? window.location.host : 'globallove.vercel.app'}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40">
