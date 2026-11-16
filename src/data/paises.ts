@@ -72,7 +72,7 @@ export const CIDADES: LocalidadeItem[] = [
     "faq": [
       {
         "pergunta": "O GlobalLove.com é pago em São Paulo?",
-        "resposta": "O GlobalLove.com possui planos Premium (mensal R$ 29,90 e anual R$ 239,90) pagos por cartão ou Pix."
+        "resposta": "Não! O GlobalLove.com é 100% gratuito em São Paulo e em todos os países, sem mensalidades nem taxas."
       },
       {
         "pergunta": "Posso ver pessoas de outros bairros?",
@@ -255,7 +255,7 @@ export const CIDADES: LocalidadeItem[] = [
     "faq": [
       {
         "pergunta": "O cadastro é rápido em Boa Vista?",
-        "resposta": "Sim, o cadastro e a busca por pessoas são Premiums."
+        "resposta": "Sim, o cadastro e a busca por pessoas são 100% gratuitos."
       },
       {
         "pergunta": "Como vejo a distância?",
@@ -309,7 +309,7 @@ export const CIDADES: LocalidadeItem[] = [
       {
         "titulo": "Como funciona o GlobalLove.com",
         "paragrafos": [
-          "Cadastre-se Premium, adicione fotos reais e defina suas preferências. Dê like em quem te interessa e inicie o chat após o match."
+          "Cadastre-se gratuitamente, adicione fotos reais e defina suas preferências. Dê like em quem te interessa e inicie o chat após o match."
         ]
       }
     ],
@@ -738,8 +738,8 @@ export const PAISES_DETALHES: LocalidadeItem[] = [
     ],
     "faq": [
       {
-        "pergunta": "O GlobalLove.com é Premium?",
-        "resposta": "O GlobalLove.com possui planos Premium (mensal e anual) via cartão ou Pix."
+        "pergunta": "O GlobalLove.com é gratuito?",
+        "resposta": "Sim! O GlobalLove.com é 100% gratuito em todo o mundo, incluindo chat, matches e filtros."
       },
       {
         "pergunta": "Quantos matches posso ter?",
@@ -1031,7 +1031,7 @@ export const PAISES_DETALHES: LocalidadeItem[] = [
       },
       {
         "pergunta": "Quais são os planos?",
-        "resposta": "O GlobalLove.com possui planos Premium (mensal R$ 29,90 e anual R$ 239,90) pagos por cartão ou Pix."
+        "resposta": "O GlobalLove.com é 100% gratuito, com todos os recursos liberados sem nenhuma cobrança ou mensalidade."
       },
       {
         "pergunta": "Como é o match?",
@@ -1175,7 +1175,7 @@ export const PAISES_DETALHES: LocalidadeItem[] = [
       },
       {
         "pergunta": "Quais são os planos?",
-        "resposta": "O GlobalLove.com possui planos Premium acessíveis via cartão ou Pix."
+        "resposta": "O GlobalLove.com é 100% gratuito para toda a comunidade, sem taxas ocultas ou assinaturas."
       },
       {
         "pergunta": "Qual a distância máxima de busca?",

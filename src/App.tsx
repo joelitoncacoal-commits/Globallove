@@ -1,7 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Loader2 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
+import { MobileTabBar } from './components/layout/MobileTabBar';
+import { ToastViewport } from './components/layout/ToastViewport';
 import { MatchModal } from './components/modals/MatchModal';
 
 // Pages
@@ -26,27 +29,33 @@ import { Contato } from './pages/Contato';
 import { Admin } from './pages/Admin';
 
 const RouterView: React.FC = () => {
-  const { currentRoute, isLoggedIn } = useApp();
+  const { currentRoute, isLoggedIn, authReady, needsVerification, needsOnboarding } = useApp();
 
   // Normalize path
   const path = currentRoute.split('?')[0].replace(/\/+$/, '') || '/';
 
-  useEffect(() => {
-    const canonical = document.getElementById('dynamic-canonical');
-    if (canonical) {
-      canonical.setAttribute('href', `${window.location.origin}${path}`);
-    }
-  }, [path]);
-
-  // Rotas restritas que exigem cadastro obrigatório
+  // Wait for Firebase Auth bootstrap before rendering protected screens
   const protectedRoutes = ['/descobrir', '/matches', '/perfil'];
-  const isProtectedChat = path.startsWith('/conversas');
-  if ((protectedRoutes.includes(path) || isProtectedChat) && !isLoggedIn) {
+  const isProtected = protectedRoutes.includes(path) || path.startsWith('/conversas');
+
+  if (!authReady && (isProtected || path === '/admin' || path === '/entrar')) {
     return (
-      <Entrar
-        redirectNotice="Cadastro Obrigatório: Para ver perfis reais, dar likes, conversar no chat e fazer chamadas de vídeo no GlobalLove.com, é obrigatório cadastrar seus dados reais."
-      />
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4">
+        <Loader2 className="size-8 animate-spin text-primary" />
+        <p className="text-sm font-medium text-muted-foreground">Carregando sua sessão segura...</p>
+      </div>
     );
+  }
+
+  if (isProtected && !isLoggedIn) {
+    let notice =
+      'Para ver perfis reais, dar likes, conversar no chat e fazer chamadas no GlobalLove.com, entre com sua conta verificada (18+).';
+    if (needsVerification) {
+      notice = 'Confirme seu endereço de e-mail para liberar seu acesso completo na plataforma.';
+    } else if (needsOnboarding) {
+      notice = 'Complete seu perfil com foto e localização aproximada para começar a descobrir pessoas.';
+    }
+    return <Entrar redirectNotice={notice} />;
   }
 
   // 1. Static and App Routes
@@ -103,6 +112,8 @@ export default function App() {
           <RouterView />
         </main>
         <Footer />
+        <MobileTabBar />
+        <ToastViewport />
         <MatchModal />
       </div>
     </AppProvider>

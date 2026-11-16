@@ -1,0 +1,387 @@
+{
+  "entities": {
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Public-safe dating discovery profile without sensitive PII (emails, street addresses, or exact GPS coordinates).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "nome": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "idade": { "type": "number" },
+        "cidade": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "pais": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "bandeira": { "type": "string", "minLength": 1, "maxLength": 16 },
+        "profissao": { "type": "string", "maxLength": 100 },
+        "bio": { "type": "string", "maxLength": 600 },
+        "interesses": { "type": "array" },
+        "habitos": { "type": "array" },
+        "fotos": { "type": "array" },
+        "idiomas": { "type": "array" },
+        "genero": { "type": "string", "maxLength": 32 },
+        "generoRotulo": { "type": "string", "maxLength": 40 },
+        "interesseEm": { "type": "string", "maxLength": 32 },
+        "buscando": { "type": "string", "maxLength": 160 },
+        "showLocation": { "type": "boolean" },
+        "approxLat": { "type": "number" },
+        "approxLng": { "type": "number" },
+        "online": { "type": "boolean" },
+        "emailVerified": { "type": "boolean" },
+        "ageConfirmed18": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["ativo", "suspenso"] },
+        "lastSeenAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "nome",
+        "idade",
+        "cidade",
+        "pais",
+        "bandeira",
+        "genero",
+        "generoRotulo",
+        "interesseEm",
+        "fotos",
+        "habitos",
+        "showLocation",
+        "online",
+        "emailVerified",
+        "ageConfirmed18",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PrivateUserInfo": {
+      "title": "PrivateUserInfo",
+      "description": "Strictly isolated PII and privacy preferences readable only by the account owner or verified admins.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "minLength": 5, "maxLength": 160 },
+        "endereco": { "type": "string", "maxLength": 160 },
+        "privacyHideAddress": { "type": "boolean" },
+        "privacyShowOnlineStatus": { "type": "boolean" },
+        "privacyShowLocationOnMap": { "type": "boolean" },
+        "emailVerified": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["ativo", "suspenso"] },
+        "lgpdConsentAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "email",
+        "endereco",
+        "privacyHideAddress",
+        "privacyShowOnlineStatus",
+        "privacyShowLocationOnMap",
+        "emailVerified",
+        "status",
+        "lgpdConsentAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LikeRecord": {
+      "title": "LikeRecord",
+      "description": "User swipe/interaction decision keyed deterministically as {fromUid}_{toUid}.",
+      "type": "object",
+      "properties": {
+        "fromUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "toUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "type": { "type": "string", "enum": ["like", "superlike", "pass"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromUid", "toUid", "type", "createdAt", "updatedAt"]
+    },
+    "MatchRecord": {
+      "title": "MatchRecord",
+      "description": "Mutual match and conversation header verified by reciprocal like records.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userA": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userB": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "participants": { "type": "array" },
+        "lastMessage": { "type": "string", "maxLength": 400 },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "lastSenderId": { "type": "string", "maxLength": 128 },
+        "unreadA": { "type": "number" },
+        "unreadB": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "blocked"] },
+        "blockedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "userA",
+        "userB",
+        "participants",
+        "lastMessage",
+        "lastMessageAt",
+        "lastSenderId",
+        "unreadA",
+        "unreadB",
+        "status",
+        "blockedBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatMessageRecord": {
+      "title": "ChatMessageRecord",
+      "description": "Private message inside a confirmed mutual match subcollection.",
+      "type": "object",
+      "properties": {
+        "matchId": { "type": "string", "maxLength": 260, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "recipientId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tipo": { "type": "string", "enum": ["texto", "imagem", "video", "audio"] },
+        "texto": { "type": "string", "maxLength": 2000 },
+        "midiaUrl": { "type": "string", "maxLength": 350000 },
+        "duracaoAudio": { "type": "string", "maxLength": 16 },
+        "lida": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["matchId", "senderId", "recipientId", "tipo", "texto", "lida", "createdAt"]
+    },
+    "NotificationRecord": {
+      "title": "NotificationRecord",
+      "description": "User notification for likes, matches, messages, and moderation updates.",
+      "type": "object",
+      "properties": {
+        "recipientId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "type": { "type": "string", "enum": ["like", "match", "message", "moderation", "system"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "body": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "link": { "type": "string", "maxLength": 160 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recipientId", "senderId", "type", "title", "body", "link", "read", "createdAt"]
+    },
+    "BlockRecord": {
+      "title": "BlockRecord",
+      "description": "Unidirectional user block record keyed as {blockerUid}_{blockedUid}.",
+      "type": "object",
+      "properties": {
+        "blockerUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "blockedUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reason": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["blockerUid", "blockedUid", "reason", "createdAt"]
+    },
+    "ReportRecord": {
+      "title": "ReportRecord",
+      "description": "Abuse or safety moderation report routed to admins.",
+      "type": "object",
+      "properties": {
+        "reporterUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reportedUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "category": { "type": "string", "enum": ["spam", "harassment", "fake_profile", "underage", "scam", "other"] },
+        "description": { "type": "string", "minLength": 5, "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["open", "reviewing", "resolved", "dismissed"] },
+        "reviewedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "reporterUid",
+        "reportedUid",
+        "category",
+        "description",
+        "status",
+        "reviewedBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Support or safety inquiry submitted through the Contact page.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "nome": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "email": { "type": "string", "minLength": 5, "maxLength": 160 },
+        "assunto": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "mensagem": { "type": "string", "minLength": 5, "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["open", "resolved"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "nome", "email", "assunto", "mensagem", "status", "createdAt"]
+    },
+    "MuralPostRecord": {
+      "title": "MuralPostRecord",
+      "description": "Public community wall post.",
+      "type": "object",
+      "properties": {
+        "autorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "autorNome": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "autorFoto": { "type": "string", "maxLength": 200000 },
+        "autorCidade": { "type": "string", "maxLength": 80 },
+        "autorPais": { "type": "string", "maxLength": 80 },
+        "autorBandeira": { "type": "string", "maxLength": 16 },
+        "texto": { "type": "string", "minLength": 1, "maxLength": 1500 },
+        "fotoUrl": { "type": "string", "maxLength": 250000 },
+        "curtidasCount": { "type": "number" },
+        "comentariosCount": { "type": "number" },
+        "visibilidade": { "type": "string", "enum": ["public", "hidden"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "autorId",
+        "autorNome",
+        "autorFoto",
+        "autorCidade",
+        "autorPais",
+        "autorBandeira",
+        "texto",
+        "curtidasCount",
+        "comentariosCount",
+        "visibilidade",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MuralCommentRecord": {
+      "title": "MuralCommentRecord",
+      "description": "Comment on a community wall post.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "autorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "autorNome": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "autorFoto": { "type": "string", "maxLength": 200000 },
+        "autorBandeira": { "type": "string", "maxLength": 16 },
+        "texto": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "autorId", "autorNome", "autorFoto", "autorBandeira", "texto", "createdAt"]
+    },
+    "MuralLikeRecord": {
+      "title": "MuralLikeRecord",
+      "description": "Like marker keyed by liker UID inside a post subcollection.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "createdAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Authorized admin / moderator role profile.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "nome": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "email": { "type": "string", "minLength": 5, "maxLength": 160 },
+        "cargo": { "type": "string", "maxLength": 100 },
+        "fotoUrl": { "type": "string", "maxLength": 200000 },
+        "nivelAcesso": { "type": "string", "enum": ["SuperAdmin", "Moderador"] },
+        "ativo": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "nome", "email", "cargo", "fotoUrl", "nivelAcesso", "ativo", "createdAt", "updatedAt"]
+    },
+    "AdminAuditLog": {
+      "title": "AdminAuditLog",
+      "description": "Immutable administrative action log.",
+      "type": "object",
+      "properties": {
+        "actorUid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorEmail": { "type": "string", "maxLength": 160 },
+        "action": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "details": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorUid", "actorEmail", "action", "targetId", "details", "createdAt"]
+    },
+    "PlatformEvent": {
+      "title": "PlatformEvent",
+      "description": "Real platform operational event for admin telemetry.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tipo": { "type": "string", "enum": ["cadastro", "match", "video_chamada", "mensagem", "report", "block"] },
+        "detalhe": { "type": "string", "minLength": 2, "maxLength": 240 },
+        "pais": { "type": "string", "maxLength": 80 },
+        "bandeira": { "type": "string", "maxLength": 16 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "tipo", "detalhe", "pais", "bandeira", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Public dating discovery profiles without sensitive PII."
+    },
+    "/users_private/{userId}": {
+      "schema": { "$ref": "#/entities/PrivateUserInfo" },
+      "description": "Private PII (email, address, privacy flags) strictly owned by userId or admin."
+    },
+    "/likes/{likeId}": {
+      "schema": { "$ref": "#/entities/LikeRecord" },
+      "description": "Directional like/superlike/pass decision keyed as {fromUid}_{toUid}."
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/MatchRecord" },
+      "description": "Mutual match and chat header keyed deterministically as {minUid}_{maxUid}."
+    },
+    "/matches/{matchId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessageRecord" },
+      "description": "Private messages within a confirmed mutual match."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationRecord" },
+      "description": "User notification items for likes, matches, messages, and moderation."
+    },
+    "/blocks/{blockId}": {
+      "schema": { "$ref": "#/entities/BlockRecord" },
+      "description": "User block records keyed as {blockerUid}_{blockedUid}."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/ReportRecord" },
+      "description": "Moderation and abuse reports."
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/SupportTicket" },
+      "description": "User support and safety tickets submitted via Contact form."
+    },
+    "/mural_posts/{postId}": {
+      "schema": { "$ref": "#/entities/MuralPostRecord" },
+      "description": "Community wall posts."
+    },
+    "/mural_posts/{postId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/MuralCommentRecord" },
+      "description": "Comments under a community wall post."
+    },
+    "/mural_posts/{postId}/post_likes/{uid}": {
+      "schema": { "$ref": "#/entities/MuralLikeRecord" },
+      "description": "Atomic per-user like record for a community wall post."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Admin and moderator access registry."
+    },
+    "/admin_audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminAuditLog" },
+      "description": "Append-only immutable audit trail of admin moderation actions."
+    },
+    "/platform_events/{eventId}": {
+      "schema": { "$ref": "#/entities/PlatformEvent" },
+      "description": "Verified platform activity feed for admin monitoring."
+    }
+  }
+}

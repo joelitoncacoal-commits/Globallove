@@ -1,0 +1,766 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // GLOBAL HARDENED PRIMITIVES
+    // =========================================================================
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidCompositeId(id) {
+      return id is string && id.size() >= 3 && id.size() <= 260 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isBootstrappedSuperAdmin() {
+      return isVerified()
+        && request.auth.token.email != null
+        && request.auth.token.email == 'joeliton.cacoal@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedSuperAdmin()
+        || (
+          isVerified()
+          && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+          && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.ativo == true
+        );
+    }
+
+    function isStrLen(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isOptStringList(val, maxItems) {
+      return val is list
+        && val.size() <= maxItems
+        && (val.size() == 0 || (val[0] is string && val[0].size() <= 100000));
+    }
+
+    // =========================================================================
+    // ENTITY VALIDATION HELPERS (Strictly aligned with firebase-blueprint.json)
+    // =========================================================================
+
+    function isValidPublicProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'nome', 'idade', 'cidade', 'pais', 'bandeira',
+          'genero', 'generoRotulo', 'interesseEm', 'fotos', 'habitos',
+          'showLocation', 'online', 'emailVerified', 'ageConfirmed18',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'nome', 'idade', 'cidade', 'pais', 'bandeira',
+          'profissao', 'bio', 'interesses', 'habitos', 'fotos', 'idiomas',
+          'genero', 'generoRotulo', 'interesseEm', 'buscando',
+          'showLocation', 'approxLat', 'approxLng', 'online',
+          'emailVerified', 'ageConfirmed18', 'status',
+          'lastSeenAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && isStrLen(data.nome, 2, 60)
+        && data.idade is number && data.idade >= 18 && data.idade <= 99
+        && data.ageConfirmed18 == true
+        && isStrLen(data.cidade, 1, 80)
+        && isStrLen(data.pais, 1, 80)
+        && isStrLen(data.bandeira, 1, 16)
+        && (!('profissao' in data) || isStrLen(data.profissao, 0, 100))
+        && (!('bio' in data) || isStrLen(data.bio, 0, 600))
+        && (!('interesses' in data) || isOptStringList(data.interesses, 12))
+        && isOptStringList(data.habitos, 18)
+        && data.fotos is list && data.fotos.size() >= 1 && data.fotos.size() <= 6
+        && data.fotos[0] is string && data.fotos[0].size() <= 250000
+        && (!('idiomas' in data) || isOptStringList(data.idiomas, 10))
+        && isStrLen(data.genero, 1, 32)
+        && isStrLen(data.generoRotulo, 1, 40)
+        && isStrLen(data.interesseEm, 1, 32)
+        && (!('buscando' in data) || isStrLen(data.buscando, 0, 160))
+        && data.showLocation is bool
+        && (!('approxLat' in data) || (data.approxLat is number && data.approxLat >= -90 && data.approxLat <= 90))
+        && (!('approxLng' in data) || (data.approxLng is number && data.approxLng >= -180 && data.approxLng <= 180))
+        && data.online is bool
+        && data.emailVerified is bool
+        && data.status in ['ativo', 'suspenso']
+        && (!('lastSeenAt' in data) || data.lastSeenAt is timestamp)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPrivateUser(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'email', 'endereco', 'privacyHideAddress',
+          'privacyShowOnlineStatus', 'privacyShowLocationOnMap',
+          'emailVerified', 'status', 'lgpdConsentAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'email', 'endereco', 'privacyHideAddress',
+          'privacyShowOnlineStatus', 'privacyShowLocationOnMap',
+          'emailVerified', 'status', 'lgpdConsentAt', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && isStrLen(data.email, 5, 160)
+        && isStrLen(data.endereco, 0, 160)
+        && data.privacyHideAddress is bool
+        && data.privacyShowOnlineStatus is bool
+        && data.privacyShowLocationOnMap is bool
+        && data.emailVerified is bool
+        && data.status in ['ativo', 'suspenso']
+        && data.lgpdConsentAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidLike(data, likeId) {
+      return data.keys().hasAll(['fromUid', 'toUid', 'type', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['fromUid', 'toUid', 'type', 'createdAt', 'updatedAt'])
+        && isValidId(data.fromUid)
+        && isValidId(data.toUid)
+        && data.fromUid != data.toUid
+        && likeId == (data.fromUid + '_' + data.toUid)
+        && data.type in ['like', 'superlike', 'pass']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMatch(data, matchId) {
+      return data.keys().hasAll([
+          'id', 'userA', 'userB', 'participants', 'lastMessage',
+          'lastMessageAt', 'lastSenderId', 'unreadA', 'unreadB',
+          'status', 'blockedBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userA', 'userB', 'participants', 'lastMessage',
+          'lastMessageAt', 'lastSenderId', 'unreadA', 'unreadB',
+          'status', 'blockedBy', 'createdAt', 'updatedAt'
+        ])
+        && isValidCompositeId(data.id)
+        && data.id == matchId
+        && isValidId(data.userA)
+        && isValidId(data.userB)
+        && data.userA < data.userB
+        && matchId == (data.userA + '_' + data.userB)
+        && data.participants is list
+        && data.participants.size() == 2
+        && data.participants[0] == data.userA
+        && data.participants[1] == data.userB
+        && isStrLen(data.lastMessage, 0, 400)
+        && data.lastMessageAt is timestamp
+        && isStrLen(data.lastSenderId, 0, 128)
+        && data.unreadA is number && data.unreadA >= 0
+        && data.unreadB is number && data.unreadB >= 0
+        && data.status in ['active', 'blocked']
+        && isStrLen(data.blockedBy, 0, 128)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function hasReciprocalLikes(userA, userB) {
+      return existsAfter(/databases/$(database)/documents/likes/$(userA + '_' + userB))
+        && existsAfter(/databases/$(database)/documents/likes/$(userB + '_' + userA))
+        && getAfter(/databases/$(database)/documents/likes/$(userA + '_' + userB)).data.type in ['like', 'superlike']
+        && getAfter(/databases/$(database)/documents/likes/$(userB + '_' + userA)).data.type in ['like', 'superlike'];
+    }
+
+    function isValidMessage(data, matchId) {
+      return data.keys().hasAll(['matchId', 'senderId', 'recipientId', 'tipo', 'texto', 'lida', 'createdAt'])
+        && data.keys().hasOnly(['matchId', 'senderId', 'recipientId', 'tipo', 'texto', 'midiaUrl', 'duracaoAudio', 'lida', 'createdAt'])
+        && isValidCompositeId(data.matchId)
+        && data.matchId == matchId
+        && isValidId(data.senderId)
+        && isValidId(data.recipientId)
+        && data.senderId != data.recipientId
+        && data.tipo in ['texto', 'imagem', 'video', 'audio']
+        && isStrLen(data.texto, 0, 2000)
+        && (!('midiaUrl' in data) || isStrLen(data.midiaUrl, 0, 350000))
+        && (!('duracaoAudio' in data) || isStrLen(data.duracaoAudio, 0, 16))
+        && data.lida is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['recipientId', 'senderId', 'type', 'title', 'body', 'link', 'read', 'createdAt'])
+        && data.keys().hasOnly(['recipientId', 'senderId', 'type', 'title', 'body', 'link', 'read', 'createdAt'])
+        && isValidId(data.recipientId)
+        && isValidId(data.senderId)
+        && data.type in ['like', 'match', 'message', 'moderation', 'system']
+        && isStrLen(data.title, 1, 120)
+        && isStrLen(data.body, 1, 300)
+        && isStrLen(data.link, 0, 160)
+        && data.read is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidBlock(data, blockId) {
+      return data.keys().hasAll(['blockerUid', 'blockedUid', 'reason', 'createdAt'])
+        && data.keys().hasOnly(['blockerUid', 'blockedUid', 'reason', 'createdAt'])
+        && isValidId(data.blockerUid)
+        && isValidId(data.blockedUid)
+        && data.blockerUid != data.blockedUid
+        && blockId == (data.blockerUid + '_' + data.blockedUid)
+        && isStrLen(data.reason, 0, 200)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidReport(data) {
+      return data.keys().hasAll([
+          'reporterUid', 'reportedUid', 'category', 'description',
+          'status', 'reviewedBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'reporterUid', 'reportedUid', 'category', 'description',
+          'status', 'reviewedBy', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.reporterUid)
+        && isValidId(data.reportedUid)
+        && data.reporterUid != data.reportedUid
+        && data.category in ['spam', 'harassment', 'fake_profile', 'underage', 'scam', 'other']
+        && isStrLen(data.description, 5, 1000)
+        && data.status in ['open', 'reviewing', 'resolved', 'dismissed']
+        && isStrLen(data.reviewedBy, 0, 128)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSupportTicket(data) {
+      return data.keys().hasAll(['uid', 'nome', 'email', 'assunto', 'mensagem', 'status', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'nome', 'email', 'assunto', 'mensagem', 'status', 'createdAt'])
+        && isStrLen(data.uid, 1, 128)
+        && isStrLen(data.nome, 2, 80)
+        && isStrLen(data.email, 5, 160)
+        && isStrLen(data.assunto, 2, 120)
+        && isStrLen(data.mensagem, 5, 2000)
+        && data.status in ['open', 'resolved']
+        && data.createdAt is timestamp;
+    }
+
+    function isValidMuralPost(data) {
+      return data.keys().hasAll([
+          'autorId', 'autorNome', 'autorFoto', 'autorCidade', 'autorPais',
+          'autorBandeira', 'texto', 'curtidasCount', 'comentariosCount',
+          'visibilidade', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'autorId', 'autorNome', 'autorFoto', 'autorCidade', 'autorPais',
+          'autorBandeira', 'texto', 'fotoUrl', 'curtidasCount', 'comentariosCount',
+          'visibilidade', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.autorId)
+        && isStrLen(data.autorNome, 1, 80)
+        && isStrLen(data.autorFoto, 0, 200000)
+        && isStrLen(data.autorCidade, 0, 80)
+        && isStrLen(data.autorPais, 0, 80)
+        && isStrLen(data.autorBandeira, 0, 16)
+        && isStrLen(data.texto, 1, 1500)
+        && (!('fotoUrl' in data) || isStrLen(data.fotoUrl, 0, 250000))
+        && data.curtidasCount is number && data.curtidasCount >= 0
+        && data.comentariosCount is number && data.comentariosCount >= 0
+        && data.visibilidade in ['public', 'hidden']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMuralComment(data, postId) {
+      return data.keys().hasAll(['postId', 'autorId', 'autorNome', 'autorFoto', 'autorBandeira', 'texto', 'createdAt'])
+        && data.keys().hasOnly(['postId', 'autorId', 'autorNome', 'autorFoto', 'autorBandeira', 'texto', 'createdAt'])
+        && isValidId(data.postId)
+        && data.postId == postId
+        && isValidId(data.autorId)
+        && isStrLen(data.autorNome, 1, 80)
+        && isStrLen(data.autorFoto, 0, 200000)
+        && isStrLen(data.autorBandeira, 0, 16)
+        && isStrLen(data.texto, 1, 600)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidAdminRecord(data, uid) {
+      return data.keys().hasAll(['uid', 'nome', 'email', 'cargo', 'fotoUrl', 'nivelAcesso', 'ativo', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'nome', 'email', 'cargo', 'fotoUrl', 'nivelAcesso', 'ativo', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == uid
+        && isStrLen(data.nome, 2, 80)
+        && isStrLen(data.email, 5, 160)
+        && isStrLen(data.cargo, 1, 100)
+        && isStrLen(data.fotoUrl, 0, 200000)
+        && data.nivelAcesso in ['SuperAdmin', 'Moderador']
+        && data.ativo is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['actorUid', 'actorEmail', 'action', 'targetId', 'details', 'createdAt'])
+        && data.keys().hasOnly(['actorUid', 'actorEmail', 'action', 'targetId', 'details', 'createdAt'])
+        && isValidId(data.actorUid)
+        && isStrLen(data.actorEmail, 5, 160)
+        && isStrLen(data.action, 2, 80)
+        && isStrLen(data.targetId, 0, 128)
+        && isStrLen(data.details, 1, 500)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidPlatformEvent(data) {
+      return data.keys().hasAll(['uid', 'tipo', 'detalhe', 'pais', 'bandeira', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'tipo', 'detalhe', 'pais', 'bandeira', 'createdAt'])
+        && isValidId(data.uid)
+        && data.tipo in ['cadastro', 'match', 'video_chamada', 'mensagem', 'report', 'block']
+        && isStrLen(data.detalhe, 2, 240)
+        && isStrLen(data.pais, 0, 80)
+        && isStrLen(data.bandeira, 0, 16)
+        && data.createdAt is timestamp;
+    }
+
+    // =========================================================================
+    // COLLECTION RULES
+    // =========================================================================
+
+    // 1. PUBLIC PROFILES (Zero PII)
+    match /profiles/{userId} {
+      allow get: if isValidId(userId) && isSignedIn() && (
+        resource == null || existing().status == 'ativo' || existing().uid == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.status == 'ativo' || resource.data.uid == request.auth.uid || isAdmin()
+      );
+      allow create: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidPublicProfile(incoming(), userId)
+        && incoming().status == 'ativo'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && isValidPublicProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isVerifiedOwner(userId)
+            && incoming().status == existing().status
+          )
+        );
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    // 2. PRIVATE USER PII (Owner & Admin Only)
+    match /users_private/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidPrivateUser(incoming(), userId)
+        && incoming().status == 'ativo'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && isValidPrivateUser(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isVerifiedOwner(userId)
+            && incoming().status == existing().status
+          )
+        );
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    // 3. LIKES & PASSES
+    match /likes/{likeId} {
+      allow get: if isValidCompositeId(likeId) && isSignedIn() && (
+        resource == null
+        || existing().fromUid == request.auth.uid
+        || (existing().toUid == request.auth.uid && existing().type in ['like', 'superlike'])
+        || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.fromUid == request.auth.uid
+        || (resource.data.toUid == request.auth.uid && resource.data.type in ['like', 'superlike'])
+        || isAdmin()
+      );
+      allow create: if isVerified()
+        && isValidCompositeId(likeId)
+        && isValidLike(incoming(), likeId)
+        && incoming().fromUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/profiles/$(incoming().toUid));
+      allow update: if isVerified()
+        && isValidCompositeId(likeId)
+        && isValidLike(incoming(), likeId)
+        && existing().fromUid == request.auth.uid
+        && incoming().fromUid == existing().fromUid
+        && incoming().toUid == existing().toUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['type', 'updatedAt']);
+      allow delete: if isValidCompositeId(likeId) && isVerified() && (
+        existing().fromUid == request.auth.uid || isAdmin()
+      );
+    }
+
+    // 4. MUTUAL MATCHES & CONVERSATION HEADERS
+    match /matches/{matchId} {
+      allow get: if isValidCompositeId(matchId) && isSignedIn() && (
+        resource == null || request.auth.uid in existing().participants || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        request.auth.uid in resource.data.participants || isAdmin()
+      );
+      allow create: if isVerified()
+        && isValidCompositeId(matchId)
+        && isValidMatch(incoming(), matchId)
+        && request.auth.uid in incoming().participants
+        && incoming().status == 'active'
+        && incoming().blockedBy == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && hasReciprocalLikes(incoming().userA, incoming().userB)
+        && !exists(/databases/$(database)/documents/blocks/$(incoming().userA + '_' + incoming().userB))
+        && !exists(/databases/$(database)/documents/blocks/$(incoming().userB + '_' + incoming().userA));
+      allow update: if isSignedIn()
+        && isValidCompositeId(matchId)
+        && isValidMatch(incoming(), matchId)
+        && incoming().id == existing().id
+        && incoming().userA == existing().userA
+        && incoming().userB == existing().userB
+        && incoming().participants == existing().participants
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            isVerified()
+            && request.auth.uid in existing().participants
+            && (
+              // Action 1: Send message / update last message or mark read (only if active)
+              (
+                existing().status == 'active'
+                && incoming().status == 'active'
+                && incoming().blockedBy == ''
+                && incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt', 'lastSenderId', 'unreadA', 'unreadB', 'updatedAt'])
+              )
+              ||
+              // Action 2: Block match conversation
+              (
+                existing().status == 'active'
+                && incoming().status == 'blocked'
+                && incoming().blockedBy == request.auth.uid
+                && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'blockedBy', 'updatedAt'])
+              )
+              ||
+              // Action 3: Unblock only by the original blocker when no blocks remain
+              (
+                existing().status == 'blocked'
+                && existing().blockedBy == request.auth.uid
+                && incoming().status == 'active'
+                && incoming().blockedBy == ''
+                && !existsAfter(/databases/$(database)/documents/blocks/$(existing().userA + '_' + existing().userB))
+                && !existsAfter(/databases/$(database)/documents/blocks/$(existing().userB + '_' + existing().userA))
+                && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'blockedBy', 'updatedAt'])
+              )
+            )
+          )
+        );
+      allow delete: if isValidCompositeId(matchId) && isSignedIn() && (
+        request.auth.uid in existing().participants || isAdmin()
+      );
+
+      // 5. PRIVATE CHAT MESSAGES SUBCOLLECTION
+      match /messages/{messageId} {
+        allow get: if isValidCompositeId(matchId) && isValidId(messageId) && isSignedIn() && (
+          request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.participants || isAdmin()
+        );
+        allow list: if isValidCompositeId(matchId) && isSignedIn() && (
+          request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.participants || isAdmin()
+        );
+        allow create: if isVerified()
+          && isValidCompositeId(matchId)
+          && isValidId(messageId)
+          && isValidMessage(incoming(), matchId)
+          && incoming().senderId == request.auth.uid
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/matches/$(matchId))
+          && get(/databases/$(database)/documents/matches/$(matchId)).data.status == 'active'
+          && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.participants
+          && incoming().recipientId in get(/databases/$(database)/documents/matches/$(matchId)).data.participants
+          && !exists(/databases/$(database)/documents/blocks/$(incoming().senderId + '_' + incoming().recipientId))
+          && !exists(/databases/$(database)/documents/blocks/$(incoming().recipientId + '_' + incoming().senderId));
+        allow update: if isVerified()
+          && isValidCompositeId(matchId)
+          && isValidId(messageId)
+          && isValidMessage(incoming(), matchId)
+          && existing().recipientId == request.auth.uid
+          && incoming().diff(existing()).affectedKeys().hasOnly(['lida']);
+        allow delete: if isValidCompositeId(matchId) && isValidId(messageId) && isSignedIn() && (
+          existing().senderId == request.auth.uid || existing().recipientId == request.auth.uid || isAdmin()
+        );
+      }
+    }
+
+    // 6. NOTIFICATIONS
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && isSignedIn() && (
+        resource == null || existing().recipientId == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.recipientId == request.auth.uid || isAdmin()
+      );
+      allow create: if isVerified()
+        && isValidId(notificationId)
+        && isValidNotification(incoming())
+        && incoming().senderId == request.auth.uid
+        && incoming().read == false
+        && incoming().createdAt == request.time
+        && (incoming().type in ['like', 'match', 'message'] || isAdmin());
+      allow update: if isSignedIn()
+        && isValidId(notificationId)
+        && isValidNotification(incoming())
+        && existing().recipientId == request.auth.uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['read']);
+      allow delete: if isValidId(notificationId) && isSignedIn() && (
+        existing().recipientId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // 7. BLOCKS
+    match /blocks/{blockId} {
+      allow get: if isValidCompositeId(blockId) && isSignedIn() && (
+        resource == null
+        || existing().blockerUid == request.auth.uid
+        || existing().blockedUid == request.auth.uid
+        || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.blockerUid == request.auth.uid
+        || resource.data.blockedUid == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isVerified()
+        && isValidCompositeId(blockId)
+        && isValidBlock(incoming(), blockId)
+        && incoming().blockerUid == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidCompositeId(blockId) && isVerified() && (
+        existing().blockerUid == request.auth.uid || isAdmin()
+      );
+    }
+
+    // 8. ABUSE / SAFETY REPORTS (Terminal State Locked once resolved/dismissed)
+    match /reports/{reportId} {
+      allow get: if isValidId(reportId) && isSignedIn() && (
+        resource == null || existing().reporterUid == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.reporterUid == request.auth.uid || isAdmin()
+      );
+      allow create: if isVerified()
+        && isValidId(reportId)
+        && isValidReport(incoming())
+        && incoming().reporterUid == request.auth.uid
+        && incoming().status == 'open'
+        && incoming().reviewedBy == ''
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(reportId)
+        && isValidReport(incoming())
+        && incoming().reporterUid == existing().reporterUid
+        && incoming().reportedUid == existing().reportedUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && !(existing().status in ['resolved', 'dismissed'])
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'reviewedBy', 'updatedAt']);
+      allow delete: if isAdmin();
+    }
+
+    // 9. SUPPORT TICKETS (Contact form — requires authentication or admin read)
+    match /support_tickets/{ticketId} {
+      allow get: if isValidId(ticketId) && (
+        isAdmin() || (isSignedIn() && existing().uid == request.auth.uid)
+      );
+      allow list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isValidId(ticketId)
+        && isValidSupportTicket(incoming())
+        && incoming().status == 'open'
+        && incoming().createdAt == request.time
+        && (
+          (isSignedIn() && incoming().uid == request.auth.uid)
+          || (!isSignedIn() && incoming().uid == 'anonymous')
+        );
+      allow update: if isAdmin()
+        && isValidId(ticketId)
+        && isValidSupportTicket(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+      allow delete: if isAdmin();
+    }
+
+    // 10. MURAL POSTS, COMMENTS & POST LIKES
+    match /mural_posts/{postId} {
+      allow get: if isValidId(postId) && isSignedIn() && (
+        resource == null || existing().visibilidade == 'public' || existing().autorId == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.visibilidade == 'public' || resource.data.autorId == request.auth.uid || isAdmin()
+      );
+      allow create: if isVerified()
+        && isValidId(postId)
+        && isValidMuralPost(incoming())
+        && incoming().autorId == request.auth.uid
+        && incoming().curtidasCount == 0
+        && incoming().comentariosCount == 0
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerified()
+        && isValidId(postId)
+        && isValidMuralPost(incoming())
+        && incoming().autorId == existing().autorId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            existing().autorId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['texto', 'fotoUrl', 'updatedAt'])
+          )
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly(['curtidasCount', 'updatedAt'])
+            && incoming().curtidasCount >= 0
+            && (
+              (
+                incoming().curtidasCount == existing().curtidasCount + 1
+                && !exists(/databases/$(database)/documents/mural_posts/$(postId)/post_likes/$(request.auth.uid))
+                && existsAfter(/databases/$(database)/documents/mural_posts/$(postId)/post_likes/$(request.auth.uid))
+              )
+              ||
+              (
+                incoming().curtidasCount == existing().curtidasCount - 1
+                && exists(/databases/$(database)/documents/mural_posts/$(postId)/post_likes/$(request.auth.uid))
+                && !existsAfter(/databases/$(database)/documents/mural_posts/$(postId)/post_likes/$(request.auth.uid))
+              )
+            )
+          )
+          || (
+            incoming().diff(existing()).affectedKeys().hasOnly(['comentariosCount', 'updatedAt'])
+            && incoming().comentariosCount == existing().comentariosCount + 1
+          )
+        );
+      allow delete: if isValidId(postId) && isSignedIn() && (
+        existing().autorId == request.auth.uid || isAdmin()
+      );
+
+      match /comments/{commentId} {
+        allow get: if isValidId(postId) && isValidId(commentId) && isSignedIn();
+        allow list: if isValidId(postId) && isSignedIn();
+        allow create: if isVerified()
+          && isValidId(postId)
+          && isValidId(commentId)
+          && isValidMuralComment(incoming(), postId)
+          && incoming().autorId == request.auth.uid
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/mural_posts/$(postId));
+        allow update: if false;
+        allow delete: if isValidId(postId) && isValidId(commentId) && isSignedIn() && (
+          existing().autorId == request.auth.uid || isAdmin()
+        );
+      }
+
+      match /post_likes/{uid} {
+        allow get: if isValidId(postId) && isValidId(uid) && isSignedIn();
+        allow list: if isValidId(postId) && isSignedIn();
+        allow create: if isVerifiedOwner(uid)
+          && isValidId(postId)
+          && isValidId(uid)
+          && incoming().keys().hasAll(['uid', 'createdAt'])
+          && incoming().keys().hasOnly(['uid', 'createdAt'])
+          && incoming().uid == request.auth.uid
+          && incoming().createdAt == request.time
+          && existsAfter(/databases/$(database)/documents/mural_posts/$(postId));
+        allow update: if false;
+        allow delete: if isValidId(postId) && isValidId(uid) && (isOwner(uid) || isAdmin());
+      }
+    }
+
+    // 11. ADMINS REGISTRY (Strictly Protected)
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && (isOwner(uid) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isBootstrappedSuperAdmin()
+        && isValidId(uid)
+        && isValidAdminRecord(incoming(), uid)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isBootstrappedSuperAdmin()
+        && isValidId(uid)
+        && isValidAdminRecord(incoming(), uid)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isBootstrappedSuperAdmin() && uid != request.auth.uid;
+    }
+
+    // 12. ADMIN AUDIT LOGS (Append-Only Immutable)
+    match /admin_audit_logs/{logId} {
+      allow get: if isValidId(logId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && isValidId(logId)
+        && isValidAuditLog(incoming())
+        && incoming().actorUid == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // 13. PLATFORM EVENTS (Verified User Telemetry -> Admin Read)
+    match /platform_events/{eventId} {
+      allow get: if isValidId(eventId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isVerified()
+        && isValidId(eventId)
+        && isValidPlatformEvent(incoming())
+        && incoming().uid == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+  }
+}

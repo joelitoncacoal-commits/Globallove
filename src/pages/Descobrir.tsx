@@ -5,160 +5,194 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Star,
-  CheckCircle2,
   MapPin,
   Briefcase,
   ChevronLeft,
   ChevronRight,
   Sparkles,
   Video,
-  Radio,
-  Flame,
-  UserCheck
+  UserCheck,
+  Flag,
+  ShieldBan,
+  Loader2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COUNTRIES } from '../data/countries';
 import { LIFESTYLE_HABITS, HABIT_MAP } from '../data/lifestyleHabits';
 import { VideoCallModal } from '../components/chat/VideoCallModal';
+import { ReportModal } from '../components/modals/ReportModal';
+import { ConfirmModal } from '../components/modals/ConfirmModal';
 
 export const Descobrir: React.FC = () => {
   const {
     filteredProfiles,
+    profilesLoading,
     currentProfile,
     likeProfile,
     passProfile,
     rewindAction,
     filters,
     setFilters,
-    navigate,
     getMutualAffinities,
     activeVideoCall,
     startVideoCall,
     endVideoCall,
-    t
+    blockUser,
+    t,
   } = useApp();
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [swipeAnimation, setSwipeAnimation] = useState<'like' | 'pass' | 'superlike' | null>(null);
+  const [busyAction, setBusyAction] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
+  const [blockTarget, setBlockTarget] = useState<{ id: string; name: string } | null>(null);
 
   const profile = currentProfile || filteredProfiles[0] || null;
   const mutual = profile ? getMutualAffinities(profile) : { interests: [], habits: [], count: 0 };
 
   const handleNextPhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!profile) return;
+    if (!profile || profile.fotos.length <= 1) return;
     setActivePhotoIndex((prev) => (prev + 1) % profile.fotos.length);
   };
 
   const handlePrevPhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!profile) return;
+    if (!profile || profile.fotos.length <= 1) return;
     setActivePhotoIndex((prev) => (prev - 1 + profile.fotos.length) % profile.fotos.length);
   };
 
-  const handlePass = () => {
-    if (!profile) return;
+  const handlePass = async () => {
+    if (!profile || busyAction) return;
+    setBusyAction(true);
     setSwipeAnimation('pass');
-    setTimeout(() => {
-      passProfile(profile);
-      setSwipeAnimation(null);
+    try {
+      await new Promise((r) => setTimeout(r, 200));
+      await passProfile(profile);
       setActivePhotoIndex(0);
-    }, 250);
+    } finally {
+      setSwipeAnimation(null);
+      setBusyAction(false);
+    }
   };
 
-  const handleLike = () => {
-    if (!profile) return;
-    setSwipeAnimation('like');
-    setTimeout(() => {
-      likeProfile(profile);
-      setSwipeAnimation(null);
+  const handleLike = async (isSuperlike = false) => {
+    if (!profile || busyAction) return;
+    setBusyAction(true);
+    setSwipeAnimation(isSuperlike ? 'superlike' : 'like');
+    try {
+      await new Promise((r) => setTimeout(r, 200));
+      await likeProfile(profile, isSuperlike);
       setActivePhotoIndex(0);
-    }, 250);
+    } finally {
+      setSwipeAnimation(null);
+      setBusyAction(false);
+    }
   };
 
-  const handleSuperlike = () => {
-    if (!profile) return;
-    setSwipeAnimation('superlike');
-    setTimeout(() => {
-      likeProfile(profile);
-      setSwipeAnimation(null);
-      setActivePhotoIndex(0);
-    }, 250);
+  const resetFilters = () => {
+    setFilters({
+      pais: 'Todos',
+      cidade: '',
+      idadeMin: 18,
+      idadeMax: 75,
+      distanciaMax: 20000,
+      interesses: [],
+      habitos: [],
+      apenasVerificados: false,
+      genero: 'todos',
+      apenasOnline: false,
+    });
   };
+
+  const hasActiveFilters =
+    filters.pais !== 'Todos' ||
+    Boolean(filters.cidade && filters.cidade.trim()) ||
+    Boolean(filters.apenasOnline) ||
+    Boolean(filters.apenasVerificados) ||
+    (filters.genero && filters.genero !== 'todos') ||
+    filters.distanciaMax < 20000 ||
+    (filters.habitos && filters.habitos.length > 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-4 py-4 md:py-8">
+    <div className="mx-auto flex w-full max-w-4xl flex-col items-center px-4 py-4 pb-24 md:py-8 md:pb-8">
       {/* Top Controls Bar */}
       <div className="flex w-full max-w-md items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="font-display text-xl sm:text-2xl font-bold text-foreground">
+          <h1 className="font-display text-xl sm:text-2xl font-bold text-foreground">
             {t.nav.discover}
-          </span>
+          </h1>
           <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-            {filteredProfiles.length} online e disponíveis
+            {filteredProfiles.length} disponíveis
           </span>
         </div>
 
         <button
+          type="button"
           onClick={() => setFilterModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-bold text-foreground shadow-soft hover:bg-muted transition-colors"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-xs font-bold text-foreground shadow-soft hover:bg-muted transition-colors"
         >
           <SlidersHorizontal className="size-3.5 text-primary" />
           Filtros
-          {(filters.pais !== 'Todos' || filters.apenasOnline || (filters.habitos && filters.habitos.length > 0)) && (
-            <span className="size-2 rounded-full bg-primary animate-pulse" />
-          )}
+          {hasActiveFilters && <span className="size-2 rounded-full bg-primary animate-pulse" />}
         </button>
       </div>
 
       {/* Card Stack Container */}
-      <div className="relative w-full max-w-md aspect-[3/4.4] min-h-[560px]">
-        {profile ? (
+      <div className="relative w-full max-w-md aspect-[3/4.3] min-h-[520px] sm:min-h-[560px]">
+        {profilesLoading ? (
+          <div className="flex size-full flex-col items-center justify-center rounded-[2.5rem] border border-border bg-card p-8 text-center shadow-card">
+            <Loader2 className="size-10 animate-spin text-primary mb-3" />
+            <p className="text-sm font-semibold text-foreground">Buscando perfis verificados...</p>
+            <p className="text-xs text-muted-foreground mt-1">Sincronizando comunidade global.</p>
+          </div>
+        ) : profile ? (
           <div
             className={`relative size-full overflow-hidden rounded-[2.5rem] bg-card border border-border shadow-float transition-all duration-300 ${
               swipeAnimation === 'like'
-                ? 'translate-x-32 rotate-12 opacity-0'
+                ? 'translate-x-28 rotate-12 opacity-0'
                 : swipeAnimation === 'pass'
-                ? '-translate-x-32 -rotate-12 opacity-0'
+                ? '-translate-x-28 -rotate-12 opacity-0'
                 : swipeAnimation === 'superlike'
-                ? '-translate-y-32 opacity-0 scale-95'
+                ? '-translate-y-24 opacity-0 scale-95'
                 : 'translate-x-0 rotate-0 opacity-100'
             }`}
           >
             {/* Photo Background */}
             <img
-              src={profile.fotos[activePhotoIndex] || profile.fotos[0]}
+              src={profile.fotos[activePhotoIndex] || profile.fotos[0] || '/icons/icon-192.webp'}
               alt={profile.nome}
               className="size-full object-cover select-none"
             />
 
             {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/30 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/30 pointer-events-none" />
 
             {/* Photo Navigation Touch Areas */}
             {profile.fotos.length > 1 && (
               <>
                 <button
+                  type="button"
                   onClick={handlePrevPhoto}
                   className="absolute top-0 left-0 bottom-40 w-1/3 z-10 flex items-center justify-start pl-3 opacity-0 hover:opacity-100 transition-opacity"
                   aria-label="Foto anterior"
                 >
-                  <span className="grid size-9 place-items-center rounded-full bg-black/50 text-white backdrop-blur-md">
+                  <span className="grid size-10 place-items-center rounded-full bg-black/50 text-white backdrop-blur-md">
                     <ChevronLeft className="size-5" />
                   </span>
                 </button>
                 <button
+                  type="button"
                   onClick={handleNextPhoto}
                   className="absolute top-0 right-0 bottom-40 w-1/3 z-10 flex items-center justify-end pr-3 opacity-0 hover:opacity-100 transition-opacity"
                   aria-label="Próxima foto"
                 >
-                  <span className="grid size-9 place-items-center rounded-full bg-black/50 text-white backdrop-blur-md">
+                  <span className="grid size-10 place-items-center rounded-full bg-black/50 text-white backdrop-blur-md">
                     <ChevronRight className="size-5" />
                   </span>
                 </button>
 
-                {/* Photo Indicator Bars */}
                 <div className="absolute top-4 inset-x-4 flex gap-1.5 z-20">
                   {profile.fotos.map((_, i) => (
                     <div
@@ -172,47 +206,62 @@ export const Descobrir: React.FC = () => {
               </>
             )}
 
-            {/* Status / Location / Verified Badge */}
-            <div className="absolute top-8 left-4 right-4 flex items-center justify-between z-20">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
-                <span className="text-base">{profile.bandeira}</span>
-                <span>{profile.cidade}, {profile.pais}</span>
+            {/* Status / Location / Safety Controls */}
+            <div className="absolute top-8 left-4 right-4 flex items-center justify-between gap-2 z-20">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-black/65 backdrop-blur-md px-3 py-1.5 text-xs font-semibold text-white max-w-[55%] truncate">
+                <span className="text-base shrink-0">{profile.bandeira}</span>
+                <span className="truncate">
+                  {profile.cidade}, {profile.pais}
+                </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {profile.online ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-md">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/90 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-white shadow-md">
                     <span className="size-2 rounded-full bg-white animate-pulse" />
                     Online
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-medium text-white/80">
-                    {profile.ultimoVisto || 'Visto hoje'}
+                  <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-medium text-white/85">
+                    {profile.ultimoVisto || 'Ativo'}
                   </span>
                 )}
 
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    startVideoCall(profile);
+                    setReportTarget({ id: profile.id, name: profile.nome });
                   }}
-                  className="p-2 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white shadow-md active:scale-95 transition"
-                  title="Chamar em vídeo"
+                  aria-label={`Denunciar ${profile.nome}`}
+                  title="Denunciar perfil"
+                  className="grid size-9 place-items-center rounded-full bg-black/60 text-white hover:bg-rose-600 transition"
                 >
-                  <Video className="size-3.5" />
+                  <Flag className="size-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setBlockTarget({ id: profile.id, name: profile.nome });
+                  }}
+                  aria-label={`Bloquear ${profile.nome}`}
+                  title="Bloquear perfil"
+                  className="grid size-9 place-items-center rounded-full bg-black/60 text-white hover:bg-neutral-900 transition"
+                >
+                  <ShieldBan className="size-4" />
                 </button>
               </div>
             </div>
 
             {/* Profile Info Card at Bottom */}
             <div className="absolute bottom-0 inset-x-0 p-5 sm:p-6 text-white z-20 space-y-2.5">
-              
-              {/* Mutual Affinities Callout - "Ambos gostam disso!" */}
               {mutual.count > 0 && (
-                <div className="rounded-2xl bg-gradient-to-r from-rose-500/40 to-pink-500/40 border border-rose-300/40 backdrop-blur-md p-2.5 shadow-lg animate-in fade-in">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-200">
+                <div className="rounded-2xl bg-gradient-to-r from-rose-500/40 to-pink-500/40 border border-rose-300/40 backdrop-blur-md p-2.5 shadow-lg">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-100">
                     <Sparkles className="size-3.5 text-amber-300" />
-                    <span>✨ {mutual.count} Afinidades Mútuas! Ambos gostam de:</span>
+                    <span>{mutual.count} afinidades mútuas em comum</span>
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {mutual.habits.map((hid) => {
@@ -220,7 +269,7 @@ export const Descobrir: React.FC = () => {
                       return (
                         <span
                           key={hid}
-                          className="inline-flex items-center gap-1 rounded-full bg-rose-600/80 px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
+                          className="inline-flex items-center gap-1 rounded-full bg-rose-600/85 px-2 py-0.5 text-[10px] font-semibold text-white"
                         >
                           <span>{h?.icon || '⭐'}</span>
                           <span>{h?.label || hid}</span>
@@ -230,7 +279,7 @@ export const Descobrir: React.FC = () => {
                     {mutual.interests.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full bg-pink-600/80 px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
+                        className="rounded-full bg-pink-600/85 px-2 py-0.5 text-[10px] font-semibold text-white"
                       >
                         {tag}
                       </span>
@@ -239,47 +288,63 @@ export const Descobrir: React.FC = () => {
                 </div>
               )}
 
-              {/* Name, Verified Age & Detailed Gender */}
               <div>
-                <div className="flex items-baseline gap-2">
+                <div className="flex flex-wrap items-baseline gap-2">
                   <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">
                     {profile.nome}
                   </h2>
-                  <span className="text-xl sm:text-2xl font-light opacity-90">{profile.idade} anos</span>
-                  <span className="inline-flex items-center gap-1 bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 text-[10px] font-semibold px-2 py-0.5 rounded-full" title="Idade e identidade verificadas">
-                    <UserCheck className="size-3 text-emerald-300" />
-                    Verificada
-                  </span>
+                  <span className="text-xl sm:text-2xl font-light opacity-90">{profile.idade}</span>
+                  {profile.emailVerified && (
+                    <span
+                      className="inline-flex items-center gap-1 bg-emerald-500/30 border border-emerald-400/50 text-emerald-100 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      title="E-mail verificado"
+                    >
+                      <UserCheck className="size-3 text-emerald-300" />
+                      Verificado
+                    </span>
+                  )}
                 </div>
 
-                {/* Detailed Gender label */}
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs font-semibold text-rose-300">
-                    {profile.generoRotulo || (profile.genero === 'mulher_cis' ? 'Mulher Cis' : profile.genero === 'homem_cis' ? 'Homem Cis' : 'Pessoa Autêntica')}
+                    {profile.generoRotulo || 'Membro GlobalLove'}
                   </span>
-                  <span className="text-white/40">•</span>
-                  <span className="text-xs text-white/80">{profile.buscando}</span>
+                  {profile.buscando && (
+                    <>
+                      <span className="text-white/40">•</span>
+                      <span className="text-xs text-white/85 truncate">{profile.buscando}</span>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Address & Distance */}
+              {/* Approximate Distance & Profession (NEVER street address) */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-white/90">
-                <span className="flex items-center gap-1">
-                  <Briefcase className="size-3 text-white/70" /> {profile.profissao}
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="size-3 text-rose-400" />
-                  <span>{profile.endereco ? `${profile.endereco} • ` : ''}</span>
-                  <span className="font-bold text-amber-300">{profile.distanciaKm < 1 ? 'Menos de 1 km' : `${profile.distanciaKm} km`}</span>
-                </span>
+                {profile.profissao && (
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="size-3 text-white/70" /> {profile.profissao}
+                  </span>
+                )}
+                {profile.showLocation !== false && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="size-3 text-rose-400" />
+                    <span className="font-bold text-amber-300">
+                      {profile.distanciaConhecida
+                        ? profile.distanciaKm <= 1
+                          ? 'Menos de 2 km'
+                          : `~${profile.distanciaKm} km`
+                        : `${profile.cidade}, ${profile.pais}`}
+                    </span>
+                  </span>
+                )}
               </div>
 
-              {/* Bio */}
-              <p className="text-xs leading-relaxed text-white/95 line-clamp-2 font-light">
-                {profile.bio}
-              </p>
+              {profile.bio && (
+                <p className="text-xs leading-relaxed text-white/95 line-clamp-2 font-light">
+                  {profile.bio}
+                </p>
+              )}
 
-              {/* Day-to-day Lifestyle Habits */}
               {profile.habitos && profile.habitos.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {profile.habitos.slice(0, 4).map((hid) => {
@@ -306,33 +371,23 @@ export const Descobrir: React.FC = () => {
               <Sparkles className="size-8" />
             </div>
             <h3 className="font-display text-2xl font-bold text-foreground">
-              Você viu todos os perfis!
+              Nenhum perfil encontrado
             </h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-xs">
-              Tente ampliar seus filtros de distância ou país para descobrir novas pessoas ao redor do mundo.
+              Amplie os filtros de país, cidade ou idade, ou aguarde novos membros verificados na plataforma.
             </p>
             <div className="mt-6 flex flex-col gap-3 w-full max-w-xs">
               <button
-                onClick={() => {
-                  setFilters({
-                    pais: 'Todos',
-                    idadeMin: 18,
-                    idadeMax: 65,
-                    distanciaMax: 20000,
-                    interesses: [],
-                    habitos: [],
-                    apenasVerificados: false,
-                    genero: 'todos',
-                    apenasOnline: false
-                  });
-                }}
-                className="w-full rounded-full bg-brand py-3 text-sm font-bold text-primary-foreground shadow-soft"
+                type="button"
+                onClick={resetFilters}
+                className="min-h-[44px] w-full rounded-full bg-brand py-3 text-sm font-bold text-primary-foreground shadow-soft"
               >
                 Redefinir filtros globais
               </button>
               <button
-                onClick={rewindAction}
-                className="w-full rounded-full border border-border bg-card py-3 text-sm font-semibold text-foreground hover:bg-muted"
+                type="button"
+                onClick={() => void rewindAction()}
+                className="min-h-[44px] w-full rounded-full border border-border bg-card py-3 text-sm font-semibold text-foreground hover:bg-muted"
               >
                 Desfazer última ação
               </button>
@@ -343,47 +398,57 @@ export const Descobrir: React.FC = () => {
 
       {/* Action Buttons Bar */}
       {profile && (
-        <div className="mt-4 sm:mt-6 flex items-center justify-center gap-4 sm:gap-6">
-          {/* Rewind */}
+        <div className="mt-4 sm:mt-6 flex items-center justify-center gap-3 sm:gap-5">
           <button
-            onClick={rewindAction}
-            className="grid size-11 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-soft transition-transform hover:scale-105 active:scale-90"
+            type="button"
+            disabled={busyAction}
+            onClick={() => void rewindAction()}
+            aria-label="Desfazer última ação"
+            className="grid size-12 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-soft transition-transform hover:scale-105 active:scale-90 disabled:opacity-40"
             title="Desfazer"
           >
-            <RotateCcw className="size-4.5" />
+            <RotateCcw className="size-5" />
           </button>
 
-          {/* Pass */}
           <button
-            onClick={handlePass}
-            className="grid size-14 sm:size-16 place-items-center rounded-full border border-rose-200 bg-card text-rose-500 shadow-card transition-transform hover:scale-110 active:scale-90"
+            type="button"
+            disabled={busyAction}
+            onClick={() => void handlePass()}
+            aria-label="Passar perfil"
+            className="grid size-15 sm:size-16 place-items-center rounded-full border border-rose-200 bg-card text-rose-500 shadow-card transition-transform hover:scale-110 active:scale-90 disabled:opacity-40"
             title="Passar"
           >
             <X className="size-7 sm:size-8 stroke-[2.5]" />
           </button>
 
-          {/* Video Call Quick Launch */}
           <button
-            onClick={() => startVideoCall(profile)}
-            className="grid size-11 place-items-center rounded-full border border-pink-200 bg-card text-pink-500 shadow-soft transition-transform hover:scale-105 active:scale-90"
-            title="Iniciar Vídeo Chamada"
+            type="button"
+            disabled={busyAction}
+            onClick={() => void startVideoCall(profile)}
+            aria-label="Testar chamada de vídeo"
+            className="grid size-12 place-items-center rounded-full border border-pink-200 bg-card text-pink-500 shadow-soft transition-transform hover:scale-105 active:scale-90 disabled:opacity-40"
+            title="Sala de Vídeo"
           >
             <Video className="size-5" />
           </button>
 
-          {/* Superlike */}
           <button
-            onClick={handleSuperlike}
-            className="grid size-11 place-items-center rounded-full border border-amber-200 bg-card text-amber-500 shadow-soft transition-transform hover:scale-105 active:scale-90"
+            type="button"
+            disabled={busyAction}
+            onClick={() => void handleLike(true)}
+            aria-label="Enviar Super Like"
+            className="grid size-12 place-items-center rounded-full border border-amber-200 bg-card text-amber-500 shadow-soft transition-transform hover:scale-105 active:scale-90 disabled:opacity-40"
             title="Super Like"
           >
             <Star className="size-5 fill-amber-400 stroke-none" />
           </button>
 
-          {/* Like */}
           <button
-            onClick={handleLike}
-            className="grid size-14 sm:size-16 place-items-center rounded-full bg-brand text-white shadow-float transition-transform hover:scale-110 active:scale-90"
+            type="button"
+            disabled={busyAction}
+            onClick={() => void handleLike(false)}
+            aria-label="Curtir perfil"
+            className="grid size-15 sm:size-16 place-items-center rounded-full bg-brand text-white shadow-float transition-transform hover:scale-110 active:scale-90 disabled:opacity-40"
             title="Curtir"
           >
             <Heart className="size-7 sm:size-8 fill-current" />
@@ -391,9 +456,14 @@ export const Descobrir: React.FC = () => {
         </div>
       )}
 
-      {/* Advanced Filters Modal / Drawer */}
+      {/* Advanced Filters Modal */}
       {filterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Filtros de Descoberta"
+        >
           <div className="w-full max-w-lg rounded-3xl bg-card border border-border p-6 shadow-float max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="flex items-center gap-2">
@@ -403,8 +473,10 @@ export const Descobrir: React.FC = () => {
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setFilterModalOpen(false)}
-                className="grid size-8 place-items-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+                aria-label="Fechar filtros"
+                className="grid min-h-[44px] min-w-[44px] place-items-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
               >
                 <X className="size-4" />
               </button>
@@ -412,35 +484,49 @@ export const Descobrir: React.FC = () => {
 
             <div className="mt-5 space-y-5">
               {/* Online Only Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border">
+              <label className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border cursor-pointer">
                 <div className="flex items-center gap-2.5">
-                  <span className="size-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="size-2.5 rounded-full bg-emerald-500 animate-pulse" />
                   <div>
                     <p className="text-xs font-bold text-foreground">Apenas Online Agora</p>
-                    <p className="text-[11px] text-muted-foreground">Mostrar apenas pessoas ativas neste momento</p>
+                    <p className="text-[11px] text-muted-foreground">Mostrar membros ativos neste momento</p>
                   </div>
                 </div>
                 <input
                   type="checkbox"
                   checked={filters.apenasOnline || false}
-                  onChange={(e) => setFilters(prev => ({ ...prev, apenasOnline: e.target.checked }))}
-                  className="size-4 accent-primary rounded"
+                  onChange={(e) => setFilters((prev) => ({ ...prev, apenasOnline: e.target.checked }))}
+                  className="size-5 accent-primary rounded"
                 />
-              </div>
+              </label>
 
-              {/* Detailed Gender Filter */}
+              {/* Verified Only Toggle */}
+              <label className="flex items-center justify-between p-3 rounded-2xl bg-muted/50 border border-border cursor-pointer">
+                <div>
+                  <p className="text-xs font-bold text-foreground">Apenas Contas Verificadas</p>
+                  <p className="text-[11px] text-muted-foreground">E-mail confirmado</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={filters.apenasVerificados || false}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, apenasVerificados: e.target.checked }))}
+                  className="size-5 accent-primary rounded"
+                />
+              </label>
+
+              {/* Gender */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Gênero e Identidade
                 </label>
                 <select
                   value={filters.genero || 'todos'}
-                  onChange={(e) => setFilters(prev => ({ ...prev, genero: e.target.value }))}
-                  className="mt-1.5 w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(e) => setFilters((prev) => ({ ...prev, genero: e.target.value }))}
+                  className="mt-1.5 w-full min-h-[44px] rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option value="todos">✨ Todos os gêneros</option>
-                  <option value="mulher_cis">Mulher Cis</option>
-                  <option value="homem_cis">Homem Cis</option>
+                  <option value="todos">Todos os gêneros</option>
+                  <option value="mulher_cis">Mulher Cisgênero</option>
+                  <option value="homem_cis">Homem Cisgênero</option>
                   <option value="mulher_trans">Mulher Trans</option>
                   <option value="homem_trans">Homem Trans</option>
                   <option value="nao_binario">Não-Binário</option>
@@ -448,30 +534,59 @@ export const Descobrir: React.FC = () => {
                 </select>
               </div>
 
-              {/* Country Selection */}
+              {/* Country & City */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    País
+                  </label>
+                  <select
+                    value={filters.pais}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, pais: e.target.value }))}
+                    className="mt-1.5 w-full min-h-[44px] rounded-2xl border border-border bg-background px-3 py-2.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="Todos">🌍 Todos os países</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.name}>
+                        {c.flag} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Cidade
+                  </label>
+                  <input
+                    type="text"
+                    value={filters.cidade || ''}
+                    onChange={(e) => setFilters((prev) => ({ ...prev, cidade: e.target.value }))}
+                    placeholder="Ex: Lisboa, Madrid..."
+                    className="mt-1.5 w-full min-h-[44px] rounded-2xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Distance Slider */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  País
-                </label>
-                <select
-                  value={filters.pais}
-                  onChange={(e) => setFilters(prev => ({ ...prev, pais: e.target.value }))}
-                  className="mt-1.5 w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="Todos">🌍 Todos os países (Global)</option>
-                  <option value="Brasil">🇧🇷 Brasil</option>
-                  <option value="Portugal">🇵🇹 Portugal</option>
-                  <option value="Argentina">🇦🇷 Argentina</option>
-                  <option value="Espanha">🇪🇸 Espanha</option>
-                  <option value="França">🇫🇷 França</option>
-                  <option value="Japão">🇯🇵 Japão</option>
-                  <option value="Estados Unidos">🇺🇸 Estados Unidos</option>
-                  {COUNTRIES.map(c => (
-                    <option key={c.code} value={c.name}>
-                      {c.flag} {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <span>Distância Máxima</span>
+                  <span className="text-primary font-bold">
+                    {filters.distanciaMax >= 20000 ? 'Mundo todo' : `${filters.distanciaMax} km`}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="50"
+                  max="20000"
+                  step="50"
+                  value={filters.distanciaMax}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, distanciaMax: Number(e.target.value) }))
+                  }
+                  className="mt-2 w-full accent-primary"
+                />
               </div>
 
               {/* Age Range */}
@@ -486,21 +601,31 @@ export const Descobrir: React.FC = () => {
                   <input
                     type="range"
                     min="18"
-                    max="50"
+                    max="60"
                     value={filters.idadeMin}
-                    onChange={(e) =>
-                      setFilters(prev => ({ ...prev, idadeMin: Number(e.target.value) }))
-                    }
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFilters((prev) => ({
+                        ...prev,
+                        idadeMin: val,
+                        idadeMax: Math.max(val, prev.idadeMax),
+                      }));
+                    }}
                     className="w-full accent-primary"
                   />
                   <input
                     type="range"
-                    min="25"
-                    max="75"
+                    min="18"
+                    max="90"
                     value={filters.idadeMax}
-                    onChange={(e) =>
-                      setFilters(prev => ({ ...prev, idadeMax: Number(e.target.value) }))
-                    }
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setFilters((prev) => ({
+                        ...prev,
+                        idadeMax: val,
+                        idadeMin: Math.min(val, prev.idadeMin),
+                      }));
+                    }}
                     className="w-full accent-primary"
                   />
                 </div>
@@ -509,10 +634,10 @@ export const Descobrir: React.FC = () => {
               {/* Lifestyle Habits Filter */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Hábitos Diários & Rotina Desejada
+                  Hábitos Diários & Rotina
                 </label>
                 <div className="mt-2 grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1">
-                  {LIFESTYLE_HABITS.map(h => {
+                  {LIFESTYLE_HABITS.map((h) => {
                     const isSelected = filters.habitos?.includes(h.id);
                     return (
                       <button
@@ -521,11 +646,11 @@ export const Descobrir: React.FC = () => {
                         onClick={() => {
                           const currentHabits = filters.habitos || [];
                           const updated = isSelected
-                            ? currentHabits.filter(id => id !== h.id)
+                            ? currentHabits.filter((id) => id !== h.id)
                             : [...currentHabits, h.id];
-                          setFilters(prev => ({ ...prev, habitos: updated }));
+                          setFilters((prev) => ({ ...prev, habitos: updated }));
                         }}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs text-left border transition ${
+                        className={`flex min-h-[40px] items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs text-left border transition ${
                           isSelected
                             ? 'bg-rose-500/15 border-rose-500 text-rose-700 font-bold'
                             : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -542,26 +667,16 @@ export const Descobrir: React.FC = () => {
 
             <div className="mt-6 flex gap-3">
               <button
-                onClick={() => {
-                  setFilters({
-                    pais: 'Todos',
-                    idadeMin: 18,
-                    idadeMax: 65,
-                    distanciaMax: 20000,
-                    interesses: [],
-                    habitos: [],
-                    apenasVerificados: false,
-                    genero: 'todos',
-                    apenasOnline: false
-                  });
-                }}
-                className="w-1/3 rounded-full border border-border bg-card py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground"
+                type="button"
+                onClick={resetFilters}
+                className="w-1/3 min-h-[44px] rounded-full border border-border bg-card py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground"
               >
                 Limpar
               </button>
               <button
+                type="button"
                 onClick={() => setFilterModalOpen(false)}
-                className="w-2/3 rounded-full bg-brand py-2.5 text-sm font-bold text-primary-foreground shadow-soft"
+                className="w-2/3 min-h-[44px] rounded-full bg-brand py-2.5 text-sm font-bold text-primary-foreground shadow-soft"
               >
                 Aplicar Filtros
               </button>
@@ -570,13 +685,30 @@ export const Descobrir: React.FC = () => {
         </div>
       )}
 
-      {/* Video Call Modal if launched from discovery */}
-      {activeVideoCall && (
-        <VideoCallModal
-          profile={activeVideoCall}
-          onClose={endVideoCall}
+      {activeVideoCall && <VideoCallModal profile={activeVideoCall} onClose={endVideoCall} />}
+
+      {reportTarget && (
+        <ReportModal
+          open={Boolean(reportTarget)}
+          targetUid={reportTarget.id}
+          targetName={reportTarget.name}
+          onClose={() => setReportTarget(null)}
         />
       )}
+
+      <ConfirmModal
+        open={Boolean(blockTarget)}
+        title={`Bloquear ${blockTarget?.name || ''}?`}
+        description="Vocês deixarão de aparecer um para o outro e qualquer conversa existente será bloqueada imediatamente."
+        confirmLabel="Bloquear agora"
+        destructive
+        onCancel={() => setBlockTarget(null)}
+        onConfirm={async () => {
+          if (!blockTarget) return;
+          await blockUser(blockTarget.id, 'Bloqueado na descoberta');
+          setBlockTarget(null);
+        }}
+      />
     </div>
   );
 };

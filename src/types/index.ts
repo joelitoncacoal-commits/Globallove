@@ -27,6 +27,12 @@ export interface LifestyleHabit {
   categoria: 'estilo' | 'social' | 'rotina' | 'lazer';
 }
 
+export interface PrivacySettings {
+  hideAddress: boolean;
+  showOnlineStatus: boolean;
+  showLocationOnMap: boolean;
+}
+
 export interface Profile {
   id: string;
   nome: string;
@@ -34,7 +40,6 @@ export interface Profile {
   cidade: string;
   pais: string;
   bandeira: string;
-  endereco?: string;
   distanciaKm: number;
   profissao: string;
   bio: string;
@@ -45,33 +50,39 @@ export interface Profile {
   genero: Genero;
   generoRotulo?: string;
   interesseEm: InteresseEm;
-  oficial?: boolean;
   latitude: number;
   longitude: number;
   distanciaConhecida?: boolean;
+  showLocation?: boolean;
   buscando: string;
-  companhiaAtivo?: boolean;
-  companhiaPara?: string[];
-  companhiaOcasioes?: string[];
-  companhiaNota?: string;
   online?: boolean;
   ultimoVisto?: string;
+  verificado?: boolean;
+  emailVerified?: boolean;
+  ageConfirmed18?: boolean;
+  status?: 'ativo' | 'suspenso';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserProfile extends Profile {
   email: string;
+  endereco?: string;
   onboardingConcluido: boolean;
   isPremium?: boolean;
-  premiumExpiresAt?: string;
   verificado?: boolean;
+  privacy?: PrivacySettings;
 }
 
 export interface ChatMessage {
   id: string;
   matchId: string;
-  autorId: string; // 'eu' or target profile id
+  autorId: string; // sender uid ('eu' alias supported in legacy components via uid comparison)
+  senderId?: string;
+  recipientId?: string;
   texto: string;
   hora: string;
+  createdAtIso?: string;
   tipo?: 'texto' | 'audio' | 'imagem' | 'video';
   midiaUrl?: string;
   duracaoAudio?: string;
@@ -80,10 +91,27 @@ export interface ChatMessage {
 
 export interface MatchItem {
   id: string;
+  userA?: string;
+  userB?: string;
   profile: Profile;
   createdAt: string;
   lastMessage?: string;
+  lastMessageAtIso?: string;
+  lastSenderId?: string;
   unreadCount?: number;
+  status?: 'active' | 'blocked';
+  blockedBy?: string;
+}
+
+export interface MuralComment {
+  id: string;
+  postId?: string;
+  autorId?: string;
+  autorNome: string;
+  autorFoto: string;
+  autorBandeira: string;
+  texto: string;
+  createdAt: string;
 }
 
 export interface MuralPost {
@@ -94,29 +122,19 @@ export interface MuralPost {
   autorCidade: string;
   autorPais: string;
   autorBandeira: string;
-  isOficial?: boolean;
   texto: string;
-  textoOriginal?: string;
-  idiomaOriginal?: string;
   fotoUrl?: string;
   curtidas: number;
   curtidoPeloUsuario?: boolean;
   comentariosCount: number;
+  visibilidade?: 'public' | 'hidden';
   createdAt: string;
   comentarios?: MuralComment[];
 }
 
-export interface MuralComment {
-  id: string;
-  autorNome: string;
-  autorFoto: string;
-  autorBandeira: string;
-  texto: string;
-  createdAt: string;
-}
-
 export interface FilterState {
   pais: string;
+  cidade?: string;
   idadeMin: number;
   idadeMax: number;
   distanciaMax: number;
@@ -140,7 +158,8 @@ export interface AdminProfile {
 
 export interface AnalyticsEvent {
   id: string;
-  tipo: 'clique' | 'cadastro' | 'match' | 'video_chamada' | 'mensagem' | 'visita_pagina';
+  uid?: string;
+  tipo: 'cadastro' | 'match' | 'video_chamada' | 'mensagem' | 'report' | 'block';
   detalhe: string;
   timestamp: string;
   pais?: string;
@@ -160,5 +179,77 @@ export interface RegisteredUserRecord {
   dataCadastro: string;
   status: 'ativo' | 'suspenso';
   verificado: boolean;
-  totalCliquesRecebidos: number;
+  totalCliquesRecebidos?: number;
+}
+
+export interface AppNotification {
+  id: string;
+  recipientId: string;
+  senderId: string;
+  type: 'like' | 'match' | 'message' | 'moderation' | 'system';
+  title: string;
+  body: string;
+  link: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface BlockRecord {
+  id: string;
+  blockerUid: string;
+  blockedUid: string;
+  reason: string;
+  createdAt: string;
+  blockedName?: string;
+  blockedPhoto?: string;
+  blockedCountry?: string;
+}
+
+export type ReportCategory = 'spam' | 'harassment' | 'fake_profile' | 'underage' | 'scam' | 'other';
+
+export interface ReportRecord {
+  id: string;
+  reporterUid: string;
+  reportedUid: string;
+  category: ReportCategory;
+  description: string;
+  status: 'open' | 'reviewing' | 'resolved' | 'dismissed';
+  reviewedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  uid: string;
+  nome: string;
+  email: string;
+  assunto: string;
+  mensagem: string;
+  status: 'open' | 'resolved';
+  createdAt: string;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  actorUid: string;
+  actorEmail: string;
+  action: string;
+  targetId: string;
+  details: string;
+  createdAt: string;
+}
+
+export interface IncomingLikeItem {
+  id: string;
+  fromUid: string;
+  type: 'like' | 'superlike';
+  createdAt: string;
+  profile: Profile | null;
+}
+
+export interface ToastMessage {
+  id: string;
+  type: 'success' | 'error' | 'info';
+  message: string;
 }

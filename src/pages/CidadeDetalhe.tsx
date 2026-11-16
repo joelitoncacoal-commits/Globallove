@@ -4,14 +4,20 @@ import { useApp } from '../context/AppContext';
 import { CIDADES } from '../data/paises';
 
 export const CidadeDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
-  const { navigate } = useApp();
-  const cidadeItem = CIDADES.find(c => c.slug === slug) || CIDADES[0];
+  const { navigate, isLoggedIn, setFilters } = useApp();
+  const cidadeItem = CIDADES.find((c) => c.slug === slug) || CIDADES[0];
+
+  const handleExploreCity = () => {
+    setFilters((prev) => ({ ...prev, pais: 'Todos', cidade: cidadeItem.nome }));
+    navigate(isLoggedIn ? '/descobrir' : '/entrar');
+  };
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col px-4 py-10">
+    <div className="mx-auto flex w-full max-w-4xl flex-col px-4 py-10 pb-24 md:pb-12">
       <button
+        type="button"
         onClick={() => navigate('/')}
-        className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-8 self-start transition-colors"
+        className="flex min-h-[40px] items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-8 self-start transition-colors"
       >
         <ArrowLeft className="size-4" /> Voltar à Página Inicial
       </button>
@@ -45,14 +51,15 @@ export const CidadeDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
 
       <div className="mt-12 rounded-3xl bg-brand p-8 text-center text-primary-foreground shadow-card">
         <h3 className="font-display text-2xl font-bold">
-          Encontre alguém em {cidadeItem.nome}
+          Encontre pessoas em {cidadeItem.nome}
         </h3>
         <p className="mt-2 text-xs text-primary-foreground/90 max-w-md mx-auto">
-          Filtre por quilômetros de distância e descubra pessoas bem perto de você.
+          Filtre por cidade e distância aproximada para descobrir pessoas com interesses em comum.
         </p>
         <button
-          onClick={() => navigate('/descobrir')}
-          className="mt-5 rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95"
+          type="button"
+          onClick={handleExploreCity}
+          className="mt-5 min-h-[44px] rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95"
         >
           Ver perfis em {cidadeItem.nome}
         </button>
