@@ -135,6 +135,7 @@ export interface MuralPost {
 export interface FilterState {
   pais: string;
   cidade?: string;
+  busca?: string;
   idadeMin: number;
   idadeMax: number;
   distanciaMax: number;
@@ -186,7 +187,7 @@ export interface AppNotification {
   id: string;
   recipientId: string;
   senderId: string;
-  type: 'like' | 'match' | 'message' | 'moderation' | 'system';
+  type: 'like' | 'match' | 'message' | 'profile_view' | 'mural' | 'moderation' | 'system';
   title: string;
   body: string;
   link: string;

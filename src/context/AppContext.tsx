@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   User,
@@ -70,6 +70,8 @@ import {
   fetchMuralComments,
   deleteMuralPostRecord,
   markNotificationReadRecord,
+  markAllNotificationsReadRecord,
+  recordProfileViewNotification,
   recordVideoCallEvent,
   deleteUserFirestoreData,
   fetchAdminDashboardData,
@@ -84,6 +86,15 @@ import {
 import { doesInterestMatchGender, formatLocalizedDateTime, formatLocalizedTime } from '../utils/localization';
 import { detectBrowserLanguage, getTranslations, TranslationStrings } from '../i18n/translations';
 import { resolveRouteSEO, applyDocumentSEO } from '../utils/seo';
+import { matchesMultilingualQuery, parseQueryToFilters } from '../data/seoKeywords';
+import {
+  BrowserNotifPermission,
+  getBrowserNotificationPermission,
+  isBrowserNotificationEnabled,
+  requestBrowserNotificationPermission,
+  setBrowserNotificationEnabledPref,
+  showNativeBrowserNotification,
+} from '../utils/browserNotifications';
 
 export interface OnboardingDraft {
   nome: string;
@@ -114,6 +125,7 @@ interface AppContextType {
   needsOnboarding: boolean;
   isLoggedIn: boolean;
   isAdmin: boolean;
+  isOwnerAdmin: boolean;
   user: UserProfile;
   updateUser: (updated: Partial<UserProfile>) => Promise<void>;
 
@@ -176,6 +188,12 @@ interface AppContextType {
   notifications: AppNotification[];
   unreadNotificationsCount: number;
   markNotificationRead: (notifId: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
+  recordProfileView: (target: Profile) => Promise<void>;
+  browserNotifPermission: BrowserNotifPermission;
+  browserNotifEnabled: boolean;
+  enableBrowserNotifications: () => Promise<BrowserNotifPermission>;
+  toggleBrowserNotifications: (enabled: boolean) => Promise<void>;
   submitSupportTicket: (params: { nome: string; email: string; assunto: string; mensagem: string }) => Promise<string>;
 
   // Modals, Video, Routing & Toasts
@@ -306,12 +324,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const t = useMemo(() => getTranslations(currentLang), [currentLang]);
 
-  // 2. Navigation state
-  const [currentRoute, setCurrentRoute] = useState<string>(() => window.location.pathname || '/');
+  // 2. Navigation state (preserves path + query parameters for deep filter links)
+  const [currentRoute, setCurrentRoute] = useState<string>(
+    () => (window.location.pathname || '/') + (window.location.search || '')
+  );
 
   const navigate = useCallback((path: string) => {
     const clean = path.startsWith('/') ? path : `/${path}`;
-    if (window.location.pathname !== clean) {
+    const fullNow = (window.location.pathname || '/') + (window.location.search || '');
+    if (fullNow !== clean) {
       window.history.pushState({}, '', clean);
     }
     setCurrentRoute(clean);
@@ -320,15 +341,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentRoute(window.location.pathname || '/');
+      setCurrentRoute((window.location.pathname || '/') + (window.location.search || ''));
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Auto-sync language on localized landing routes & update SEO metadata dynamically
+  // Auto-sync language & URL filter parameters + update SEO metadata dynamically
   useEffect(() => {
-    const path = currentRoute.split('?')[0].replace(/\/+$/, '') || '/';
+    const [rawPath, rawSearch] = currentRoute.split('?');
+    const path = rawPath.replace(/\/+$/, '') || '/';
+    const params = new URLSearchParams(rawSearch || '');
+
+    const queryLang = params.get('lang') as SupportedLang | null;
+    const validLangs: SupportedLang[] = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'zh'];
     const routeLangMap: Record<string, SupportedLang> = {
       '/en/dating': 'en',
       '/es/citas': 'es',
@@ -337,10 +363,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       '/it/incontri': 'it',
       '/ja/deai': 'ja',
     };
-    const mappedLang = routeLangMap[path];
+    const mappedLang =
+      (queryLang && validLangs.includes(queryLang) ? queryLang : undefined) || routeLangMap[path];
     if (mappedLang && mappedLang !== currentLang) {
       setCurrentLangState(mappedLang);
     }
+
+    const qText = params.get('q') || '';
+    const qCountry = params.get('pais') || '';
+    const qCity = params.get('cidade') || '';
+    if (qText || qCountry || qCity) {
+      const parsed = qText ? parseQueryToFilters(qText) : {};
+      setFilters((prev) => ({
+        ...prev,
+        ...parsed,
+        ...(qCountry ? { pais: qCountry } : {}),
+        ...(qCity ? { cidade: qCity } : {}),
+      }));
+    }
+
     const seoPayload = resolveRouteSEO(path, mappedLang || currentLang);
     applyDocumentSEO(seoPayload);
   }, [currentRoute, currentLang]);
@@ -498,6 +539,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const needsVerification = Boolean(firebaseUser && !emailVerified);
   const isLoggedIn = Boolean(firebaseUser && emailVerified && user.onboardingConcluido);
+  const isOwnerAdmin = Boolean(
+    isAdmin &&
+      firebaseUser?.emailVerified &&
+      (firebaseUser.email || '').toLowerCase() === BOOTSTRAPPED_SUPERADMIN_EMAIL.toLowerCase()
+  );
 
   // 5. Real-time data state (Firestore-backed)
   const [rawProfiles, setRawProfiles] = useState<Profile[]>([]);
@@ -524,8 +570,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [activeChatMatchId, setActiveChatMatchId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [browserNotifPermission, setBrowserNotifPermission] = useState<BrowserNotifPermission>(() =>
+    getBrowserNotificationPermission()
+  );
+  const [browserNotifEnabled, setBrowserNotifEnabled] = useState<boolean>(() =>
+    isBrowserNotificationEnabled()
+  );
+  const seenNotifIdsRef = useRef<Set<string>>(new Set());
+  const notifBootstrappedRef = useRef<boolean>(false);
   const [muralPosts, setMuralPosts] = useState<MuralPost[]>([]);
   const [muralComments, setMuralComments] = useState<Record<string, MuralComment[]>>({});
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'GL_NAVIGATE' && typeof event.data.link === 'string') {
+        navigate(event.data.link);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, [navigate]);
 
   // Auth Actions
   const signInWithGoogle = useCallback(async (): Promise<'signed_in' | 'needs_onboarding'> => {
@@ -824,7 +889,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (err) => handleFirestoreError(err, OperationType.LIST, 'matches')
     );
 
-    // 6. Notifications
+    // 6. Notifications (in-app real-time stream + native Chrome/Android browser notifications)
+    seenNotifIdsRef.current.clear();
+    notifBootstrappedRef.current = false;
     const notifsQ = query(
       collection(db, 'notifications'),
       where('recipientId', '==', uid),
@@ -834,22 +901,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubNotifs = onSnapshot(
       notifsQ,
       (snap) => {
-        setNotifications(
-          snap.docs.map((d) => {
-            const data = d.data();
-            return {
-              id: d.id,
-              recipientId: String(data.recipientId || ''),
-              senderId: String(data.senderId || ''),
-              type: (data.type as AppNotification['type']) || 'system',
-              title: String(data.title || ''),
-              body: String(data.body || ''),
-              link: String(data.link || '/'),
-              read: Boolean(data.read),
-              createdAt: formatLocalizedDateTime(timestampToIso(data.createdAt), currentLang),
-            };
-          })
-        );
+        const mapped = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            recipientId: String(data.recipientId || ''),
+            senderId: String(data.senderId || ''),
+            type: (data.type as AppNotification['type']) || 'system',
+            title: String(data.title || ''),
+            body: String(data.body || ''),
+            link: String(data.link || '/'),
+            read: Boolean(data.read),
+            createdAt: formatLocalizedDateTime(timestampToIso(data.createdAt), currentLang),
+          };
+        });
+
+        if (!notifBootstrappedRef.current) {
+          mapped.forEach((n) => seenNotifIdsRef.current.add(n.id));
+          notifBootstrappedRef.current = true;
+        } else {
+          mapped.forEach((n) => {
+            if (!seenNotifIdsRef.current.has(n.id)) {
+              seenNotifIdsRef.current.add(n.id);
+              if (!n.read) {
+                showToast(`${n.title}`, 'info');
+                void showNativeBrowserNotification({
+                  title: n.title,
+                  body: n.body,
+                  link: n.link,
+                  tag: `gl_notif_${n.id}`,
+                  onNavigate: navigate,
+                });
+              }
+            }
+          });
+        }
+
+        setNotifications(mapped);
       },
       (err) => handleFirestoreError(err, OperationType.LIST, 'notifications')
     );
@@ -1037,6 +1125,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [filters, setFilters] = useState<FilterState>({
     pais: 'Todos',
     cidade: '',
+    busca: '',
     idadeMin: 18,
     idadeMax: 75,
     distanciaMax: 20000,
@@ -1053,6 +1142,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (filters.pais !== 'Todos' && p.pais.toLowerCase() !== filters.pais.toLowerCase()) return false;
       if (filters.cidade && filters.cidade.trim()) {
         if (!p.cidade.toLowerCase().includes(filters.cidade.trim().toLowerCase())) return false;
+      }
+      if (filters.busca && filters.busca.trim() && !matchesMultilingualQuery(p, filters.busca)) {
+        return false;
       }
       if (p.idade < filters.idadeMin || p.idade > filters.idadeMax) return false;
       if (filters.apenasOnline && !p.online) return false;
@@ -1223,9 +1315,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!user.id) return;
       const target = muralPosts.find((p) => p.id === postId);
       if (!target) return;
-      await toggleMuralPostLikeRecord(postId, user.id, Boolean(target.curtidoPeloUsuario), target.curtidas);
+      await toggleMuralPostLikeRecord(
+        postId,
+        user.id,
+        Boolean(target.curtidoPeloUsuario),
+        target.curtidas,
+        user.nome,
+        target.autorId
+      );
     },
-    [user.id, muralPosts]
+    [user.id, user.nome, muralPosts]
   );
 
   const addMuralPost = useCallback(
@@ -1241,7 +1340,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     async (postId: string, texto: string) => {
       if (!user.id) return;
       const target = muralPosts.find((p) => p.id === postId);
-      await addMuralCommentRecord(postId, user, texto, target?.comentariosCount || 0);
+      await addMuralCommentRecord(
+        postId,
+        user,
+        texto,
+        target?.comentariosCount || 0,
+        target?.autorId
+      );
       await loadMuralComments(postId);
     },
     [user, muralPosts, loadMuralComments]
@@ -1291,6 +1396,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const markNotificationRead = useCallback(async (notifId: string) => {
     await markNotificationReadRecord(notifId);
   }, []);
+
+  const markAllNotificationsRead = useCallback(async () => {
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    if (unreadIds.length === 0) return;
+    await markAllNotificationsReadRecord(unreadIds);
+  }, [notifications]);
+
+  const recordProfileView = useCallback(
+    async (target: Profile) => {
+      if (!isLoggedIn || !user.id || !target.id || target.id === user.id) return;
+      await recordProfileViewNotification(user, target);
+    },
+    [isLoggedIn, user]
+  );
+
+  const enableBrowserNotifications = useCallback(async (): Promise<BrowserNotifPermission> => {
+    const perm = await requestBrowserNotificationPermission();
+    setBrowserNotifPermission(perm);
+    const enabled = perm === 'granted' && isBrowserNotificationEnabled();
+    setBrowserNotifEnabled(enabled);
+    if (perm === 'granted') {
+      showToast('Notificações do navegador/Google ativadas!', 'success');
+      void showNativeBrowserNotification({
+        title: 'GlobalLove.com — Notificações Ativas 🔔',
+        body: 'Você receberá alertas em tempo real sobre visualizações, mensagens, curtidas e matches.',
+        link: '/descobrir',
+        tag: 'gl_welcome_notif',
+        onNavigate: navigate,
+      });
+    } else if (perm === 'denied') {
+      showToast(
+        'As notificações estão bloqueadas no navegador. Libere nas permissões do site (cadeado da URL).',
+        'error'
+      );
+    } else if (perm === 'unsupported') {
+      showToast('Este navegador não suporta notificações push locais.', 'info');
+    }
+    return perm;
+  }, [navigate, showToast]);
+
+  const toggleBrowserNotifications = useCallback(
+    async (enabled: boolean) => {
+      if (enabled) {
+        if (getBrowserNotificationPermission() !== 'granted') {
+          await enableBrowserNotifications();
+          return;
+        }
+        setBrowserNotificationEnabledPref(true);
+        setBrowserNotifEnabled(true);
+        showToast('Notificações do navegador ativadas.', 'success');
+      } else {
+        setBrowserNotificationEnabledPref(false);
+        setBrowserNotifEnabled(false);
+        showToast('Notificações pop-up do navegador pausadas (alertas no sino continuam ativos).', 'info');
+      }
+    },
+    [enableBrowserNotifications, showToast]
+  );
 
   const unreadNotificationsCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
@@ -1429,6 +1592,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         needsOnboarding,
         isLoggedIn,
         isAdmin,
+        isOwnerAdmin,
         user,
         updateUser,
         signInWithGoogle,
@@ -1476,6 +1640,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         unreadNotificationsCount,
         markNotificationRead,
+        markAllNotificationsRead,
+        recordProfileView,
+        browserNotifPermission,
+        browserNotifEnabled,
+        enableBrowserNotifications,
+        toggleBrowserNotifications,
         submitSupportTicket,
         newMatchModal,
         closeMatchModal,

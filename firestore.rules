@@ -215,7 +215,7 @@ service cloud.firestore {
         && data.keys().hasOnly(['recipientId', 'senderId', 'type', 'title', 'body', 'link', 'read', 'createdAt'])
         && isValidId(data.recipientId)
         && isValidId(data.senderId)
-        && data.type in ['like', 'match', 'message', 'moderation', 'system']
+        && data.type in ['like', 'match', 'message', 'profile_view', 'mural', 'moderation', 'system']
         && isStrLen(data.title, 1, 120)
         && isStrLen(data.body, 1, 300)
         && isStrLen(data.link, 0, 160)
@@ -547,9 +547,12 @@ service cloud.firestore {
         && isValidId(notificationId)
         && isValidNotification(incoming())
         && incoming().senderId == request.auth.uid
+        && incoming().recipientId != request.auth.uid
         && incoming().read == false
         && incoming().createdAt == request.time
-        && (incoming().type in ['like', 'match', 'message'] || isAdmin());
+        && (incoming().type in ['like', 'match', 'message', 'profile_view', 'mural'] || isAdmin())
+        && !exists(/databases/$(database)/documents/blocks/$(incoming().senderId + '_' + incoming().recipientId))
+        && !exists(/databases/$(database)/documents/blocks/$(incoming().recipientId + '_' + incoming().senderId));
       allow update: if isSignedIn()
         && isValidId(notificationId)
         && isValidNotification(incoming())

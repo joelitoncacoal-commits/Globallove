@@ -1,10 +1,17 @@
 import { SupportedLang } from '../types';
 import { PAISES_DETALHES, CIDADES } from '../data/paises';
 import { GUIAS } from '../data/guias';
+import { COUNTRIES } from '../data/countries';
+import {
+  slugifyCountry,
+  getMultilingualCountryKeywords,
+  getGlobalSEOKeywordsString,
+} from '../data/seoKeywords';
 
 export interface RouteSEOPayload {
   title: string;
   description: string;
+  keywords?: string;
   path: string;
   canonicalUrl: string;
   lang: SupportedLang;
@@ -23,6 +30,7 @@ export function resolveRouteSEO(path: string, lang: SupportedLang): RouteSEOPayl
       return {
         title: `${pais.titulo} | GlobalLove.com`,
         description: pais.descricao,
+        keywords: getMultilingualCountryKeywords(pais.nome).join(', '),
         path: cleanPath,
         canonicalUrl: `${ORIGIN_FALLBACK}${cleanPath}`,
         lang,
@@ -37,6 +45,27 @@ export function resolveRouteSEO(path: string, lang: SupportedLang): RouteSEOPayl
               })),
             }
           : undefined,
+      };
+    }
+
+    const dynamicCountry = COUNTRIES.find(
+      (c) => slugifyCountry(c.name) === slug || c.code.toLowerCase() === slug.toLowerCase()
+    );
+    if (dynamicCountry) {
+      return {
+        title: `Namoro e Encontros em ${dynamicCountry.name} ${dynamicCountry.flag} | GlobalLove.com`,
+        description: `Conheça pessoas verificadas em ${dynamicCountry.name} (${dynamicCountry.code}) gratuitamente. Chat seguro, vídeo chamadas, amizades e relacionamentos globais no GlobalLove.com.`,
+        keywords: getMultilingualCountryKeywords(dynamicCountry.name).join(', '),
+        path: cleanPath,
+        canonicalUrl: `${ORIGIN_FALLBACK}${cleanPath}`,
+        lang,
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: `Namoro e Encontros em ${dynamicCountry.name}`,
+          description: `Conexões verificadas e gratuitas em ${dynamicCountry.name} no GlobalLove.com`,
+          url: `${ORIGIN_FALLBACK}${cleanPath}`,
+        },
       };
     }
   }
@@ -168,6 +197,7 @@ export function resolveRouteSEO(path: string, lang: SupportedLang): RouteSEOPayl
   return {
     title: entry.title,
     description: entry.description,
+    keywords: getGlobalSEOKeywordsString(lang),
     path: cleanPath,
     canonicalUrl: `${ORIGIN_FALLBACK}${cleanPath}`,
     lang,
@@ -196,6 +226,15 @@ export function applyDocumentSEO(payload: RouteSEOPayload): void {
   };
 
   setMeta('meta[name="description"]', 'name', 'description', payload.description);
+  if (payload.keywords) {
+    setMeta('meta[name="keywords"]', 'name', 'keywords', payload.keywords);
+  }
+  setMeta(
+    'meta[name="robots"]',
+    'name',
+    'robots',
+    payload.path === '/admin' ? 'noindex, nofollow' : 'index, follow'
+  );
   setMeta('meta[property="og:title"]', 'property', 'og:title', payload.title);
   setMeta('meta[property="og:description"]', 'property', 'og:description', payload.description);
   setMeta('meta[property="og:url"]', 'property', 'og:url', fullUrl);

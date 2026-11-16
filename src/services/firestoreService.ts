@@ -724,7 +724,9 @@ export async function toggleMuralPostLikeRecord(
   postId: string,
   uid: string,
   currentlyLiked: boolean,
-  currentCount: number
+  currentCount: number,
+  likerName?: string,
+  postAuthorId?: string
 ): Promise<void> {
   const postRef = doc(db, 'mural_posts', postId);
   const likeRef = doc(db, 'mural_posts', postId, 'post_likes', uid);
@@ -742,6 +744,19 @@ export async function toggleMuralPostLikeRecord(
       curtidasCount: currentCount + 1,
       updatedAt: serverTimestamp(),
     });
+    if (postAuthorId && postAuthorId !== uid && checkRateLimit(`mural_like_n_${uid}_${postId}`, 2, 300_000)) {
+      const notifRef = doc(collection(db, 'notifications'));
+      batch.set(notifRef, {
+        recipientId: postAuthorId,
+        senderId: uid,
+        type: 'mural',
+        title: `${sanitizeText(likerName || 'Alguém', 60)} curtiu sua publicação`,
+        body: 'Veja as reações recentes no Mural GlobalLove.',
+        link: '/mural',
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+    }
   }
 
   try {
@@ -755,7 +770,8 @@ export async function addMuralCommentRecord(
   postId: string,
   user: UserProfile,
   texto: string,
-  currentCommentsCount: number
+  currentCommentsCount: number,
+  postAuthorId?: string
 ): Promise<void> {
   if (!checkRateLimit(`comment_${user.id}`, 20, 60_000)) {
     throw new Error('Aguarde alguns segundos entre comentários.');
@@ -779,6 +795,20 @@ export async function addMuralCommentRecord(
     comentariosCount: currentCommentsCount + 1,
     updatedAt: serverTimestamp(),
   });
+
+  if (postAuthorId && postAuthorId !== user.id) {
+    const notifRef = doc(collection(db, 'notifications'));
+    batch.set(notifRef, {
+      recipientId: postAuthorId,
+      senderId: user.id,
+      type: 'mural',
+      title: `${sanitizeText(user.nome || 'Membro', 60)} comentou no seu post`,
+      body: cleanText.slice(0, 140),
+      link: '/mural',
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+  }
 
   try {
     await batch.commit();
@@ -827,6 +857,61 @@ export async function markNotificationReadRecord(notifId: string): Promise<void>
     await updateDoc(doc(db, 'notifications', notifId), { read: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `notifications/${notifId}`);
+  }
+}
+
+export async function markAllNotificationsReadRecord(notifIds: string[]): Promise<void> {
+  if (notifIds.length === 0) return;
+  const batch = writeBatch(db);
+  notifIds.slice(0, 50).forEach((id) => {
+    batch.update(doc(db, 'notifications', id), { read: true });
+  });
+  try {
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, 'notifications');
+  }
+}
+
+const PROFILE_VIEW_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+
+export async function recordProfileViewNotification(viewer: UserProfile, target: Profile): Promise<boolean> {
+  if (!viewer.id || !target.id || viewer.id === target.id) return false;
+  if (!checkRateLimit(`view_burst_${viewer.id}`, 30, 60_000)) return false;
+
+  const storageKey = `gl_pview_${viewer.id}_${target.id}`;
+  try {
+    const lastTs = Number(window.localStorage.getItem(storageKey) || '0');
+    if (lastTs && Date.now() - lastTs < PROFILE_VIEW_COOLDOWN_MS) {
+      return false;
+    }
+    window.localStorage.setItem(storageKey, String(Date.now()));
+  } catch {
+    // Fallback to sliding rate limit if storage unavailable
+    if (!checkRateLimit(`view_pair_${viewer.id}_${target.id}`, 1, PROFILE_VIEW_COOLDOWN_MS)) {
+      return false;
+    }
+  }
+
+  try {
+    const notifRef = doc(collection(db, 'notifications'));
+    await setDoc(notifRef, {
+      recipientId: target.id,
+      senderId: viewer.id,
+      type: 'profile_view',
+      title: `👀 ${sanitizeText(viewer.nome || 'Alguém', 50)} viu o seu perfil!`,
+      body: sanitizeText(
+        `${viewer.bandeira || '🌍'} ${viewer.cidade || ''}${viewer.cidade && viewer.pais ? ', ' : ''}${viewer.pais || 'GlobalLove'} visitou seu perfil agora.`,
+        260
+      ),
+      link: '/descobrir',
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+    return true;
+  } catch {
+    // Silent fallback for passive view notifications if blocked or rate-limited
+    return false;
   }
 }
 

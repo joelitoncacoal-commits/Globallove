@@ -22,6 +22,11 @@ import {
 } from '../src/utils/localization';
 import { COUNTRIES } from '../src/data/countries';
 import { resolveRouteSEO } from '../src/utils/seo';
+import {
+  findCountryByMultilingualQuery,
+  matchesMultilingualQuery,
+  computeGlobalKeywordCombinationsCount,
+} from '../src/data/seoKeywords';
 
 // -----------------------------------------------------------------------------
 // 1. Security Utilities, XSS Prevention, Privacy Coordinates & Rate Limiting
@@ -113,15 +118,53 @@ describe('Internationalization & SEO Integrity', () => {
     expect(formatLocalizedDateTime(iso, 'ja').length).toBeGreaterThan(4);
   });
 
-  it('resolves distinct SEO titles, canonical URLs, and languages per route', () => {
+  it('resolves distinct SEO titles, canonical URLs, and dynamic 249-country pages', () => {
     const home = resolveRouteSEO('/', 'pt');
     const en = resolveRouteSEO('/en/dating', 'en');
     const br = resolveRouteSEO('/pais/brasil', 'pt');
+    const ca = resolveRouteSEO('/pais/canada', 'pt');
+    const sitemap = fs.readFileSync(path.resolve(process.cwd(), 'public/sitemap.xml'), 'utf8');
+
     expect(home.canonicalUrl).toBe('https://globallove.vercel.app/');
     expect(en.lang).toBe('en');
     expect(en.canonicalUrl).toBe('https://globallove.vercel.app/en/dating');
     expect(br.title).toContain('Brasil');
     expect(br.title).not.toBe(home.title);
+    expect(ca.title).toContain('Canadá');
+    expect(ca.canonicalUrl).toBe('https://globallove.vercel.app/pais/canada');
+    expect(sitemap).toContain('https://globallove.vercel.app/pais/canada');
+    expect(sitemap).toContain('https://globallove.vercel.app/en/dating');
+  });
+
+  it('matches multilingual search keywords and filters across 8 languages and 249 countries', () => {
+    expect(computeGlobalKeywordCombinationsCount()).toBeGreaterThan(100000);
+    expect(findCountryByMultilingualQuery('free dating brazil')).toBe('Brasil');
+    expect(findCountryByMultilingualQuery('citas gratis españa')).toBe('Espanha');
+    expect(findCountryByMultilingualQuery('無料 日本')).toBe('Japão');
+
+    const sampleProfile: any = {
+      id: 'p1',
+      nome: 'Sakura',
+      idade: 27,
+      cidade: 'Tokyo',
+      pais: 'Japão',
+      bandeira: '🇯🇵',
+      distanciaKm: 100,
+      profissao: 'Designer',
+      bio: 'Coffee and travel lover',
+      interesses: ['Cinema', 'Música'],
+      habitos: ['coffee', 'travel'],
+      fotos: ['/icons/icon-192.webp'],
+      idiomas: ['Japonês', 'Inglês'],
+      genero: 'mulher_cis',
+      interesseEm: 'todos',
+      latitude: 35.6,
+      longitude: 139.7,
+    };
+
+    expect(matchesMultilingualQuery(sampleProfile, 'japan coffee')).toBe(true);
+    expect(matchesMultilingualQuery(sampleProfile, 'free dating tokyo')).toBe(true);
+    expect(matchesMultilingualQuery(sampleProfile, 'brazil rio')).toBe(false);
   });
 });
 
@@ -151,8 +194,10 @@ describe('Firestore Security Rules & Blueprint Invariants', () => {
     // Private PII split collection
     expect(rulesText).toContain('match /users_private/{userId}');
 
-    // Mural visibility validation
+    // Mural visibility validation & activity notification types
     expect(rulesText).toContain("data.visibilidade in ['public', 'hidden']");
+    expect(rulesText).toContain("'profile_view'");
+    expect(rulesText).toContain("'mural'");
 
     // Blocks must check !exists(...blocks...) on messages & matches
     expect(rulesText).toContain('/databases/$(database)/documents/blocks/$(incoming().senderId');

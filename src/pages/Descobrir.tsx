@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Heart,
   X,
@@ -15,10 +15,12 @@ import {
   Flag,
   ShieldBan,
   Loader2,
+  Search,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COUNTRIES } from '../data/countries';
 import { LIFESTYLE_HABITS, HABIT_MAP } from '../data/lifestyleHabits';
+import { GLOBAL_SEARCH_INTENTS, parseQueryToFilters } from '../data/seoKeywords';
 import { VideoCallModal } from '../components/chat/VideoCallModal';
 import { ReportModal } from '../components/modals/ReportModal';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
@@ -38,6 +40,7 @@ export const Descobrir: React.FC = () => {
     startVideoCall,
     endVideoCall,
     blockUser,
+    recordProfileView,
     t,
   } = useApp();
 
@@ -50,6 +53,14 @@ export const Descobrir: React.FC = () => {
 
   const profile = currentProfile || filteredProfiles[0] || null;
   const mutual = profile ? getMutualAffinities(profile) : { interests: [], habits: [], count: 0 };
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const timer = window.setTimeout(() => {
+      void recordProfileView(profile);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [profile, recordProfileView]);
 
   const handleNextPhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -95,6 +106,7 @@ export const Descobrir: React.FC = () => {
     setFilters({
       pais: 'Todos',
       cidade: '',
+      busca: '',
       idadeMin: 18,
       idadeMax: 75,
       distanciaMax: 20000,
@@ -109,6 +121,7 @@ export const Descobrir: React.FC = () => {
   const hasActiveFilters =
     filters.pais !== 'Todos' ||
     Boolean(filters.cidade && filters.cidade.trim()) ||
+    Boolean(filters.busca && filters.busca.trim()) ||
     Boolean(filters.apenasOnline) ||
     Boolean(filters.apenasVerificados) ||
     (filters.genero && filters.genero !== 'todos') ||
@@ -137,6 +150,62 @@ export const Descobrir: React.FC = () => {
           Filtros
           {hasActiveFilters && <span className="size-2 rounded-full bg-primary animate-pulse" />}
         </button>
+      </div>
+
+      {/* Multilingual Semantic Keyword Search */}
+      <div className="w-full max-w-md mb-3 space-y-2">
+        <div className="relative">
+          <Search className="size-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={filters.busca || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              const smart = val.trim() ? parseQueryToFilters(val) : {};
+              setFilters((prev) => ({
+                ...prev,
+                busca: val,
+                ...(smart.pais ? { pais: smart.pais } : {}),
+              }));
+            }}
+            placeholder="Filtrar em qualquer idioma (ex: Japan, Lisboa, café, video...)"
+            aria-label="Buscar perfis por palavra-chave multilíngue"
+            className="w-full min-h-[42px] rounded-full border border-border bg-card pl-10 pr-9 py-2 text-xs font-medium text-foreground shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          {filters.busca && (
+            <button
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, busca: '' }))}
+              aria-label="Limpar busca por palavra-chave"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {GLOBAL_SEARCH_INTENTS.map((intent) => (
+            <button
+              key={intent.id}
+              type="button"
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  ...intent.filterPatch,
+                  busca: intent.label,
+                }))
+              }
+              className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                filters.busca === intent.label
+                  ? 'border-primary bg-primary/15 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {intent.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Card Stack Container */}

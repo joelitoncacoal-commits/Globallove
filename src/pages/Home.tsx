@@ -12,17 +12,26 @@ import {
   MessageCircle,
   MapPin,
   Lock,
+  Search,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COUNTRIES } from '../data/countries';
 import { GUIAS } from '../data/guias';
 import { PAISES_DETALHES } from '../data/paises';
 import { FAQ_HOME } from '../data/institutional';
+import {
+  GLOBAL_SEARCH_INTENTS,
+  computeGlobalKeywordCombinationsCount,
+  parseQueryToFilters,
+  slugifyCountry,
+} from '../data/seoKeywords';
 
 export const Home: React.FC = () => {
-  const { navigate, isLoggedIn, profiles, setFilters, t } = useApp();
+  const { navigate, isLoggedIn, profiles, setFilters, currentLang, t } = useApp();
   const [countrySearch, setCountrySearch] = useState('');
+  const [keywordInput, setKeywordInput] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const combinationsCount = computeGlobalKeywordCombinationsCount();
 
   const filteredCountries = COUNTRIES.filter((c) =>
     c.name.toLowerCase().includes(countrySearch.toLowerCase())
@@ -40,8 +49,19 @@ export const Home: React.FC = () => {
       navigate(`/pais/${matchedDetail.slug}`);
       return;
     }
-    setFilters((prev) => ({ ...prev, pais: countryName }));
-    navigate(isLoggedIn ? '/descobrir' : '/mapa');
+    navigate(`/pais/${slugifyCountry(countryName)}`);
+  };
+
+  const handleKeywordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = keywordInput.trim();
+    if (!clean) {
+      navigate(isLoggedIn ? '/descobrir' : '/entrar');
+      return;
+    }
+    const parsed = parseQueryToFilters(clean);
+    setFilters((prev) => ({ ...prev, ...parsed, busca: clean }));
+    navigate(`/descobrir?q=${encodeURIComponent(clean)}`);
   };
 
   return (
@@ -288,6 +308,79 @@ export const Home: React.FC = () => {
             <button type="button" onClick={() => navigate('/pais/japao')} className="text-primary font-bold hover:underline">
               Japão 🇯🇵
             </button>
+          </div>
+
+          {/* Multilingual Semantic Keyword & Intent Filters */}
+          <div className="mt-10 rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-soft space-y-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                  Busca Semântica em 8 Idiomas • {combinationsCount.toLocaleString('pt-BR')}+ Combinações
+                </span>
+                <h3 className="font-display text-xl sm:text-2xl font-extrabold text-foreground mt-1">
+                  Pesquise filtros e palavras-chave em qualquer idioma
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Português, English, Español, Français, Deutsch, Italiano, 日本語 e 中文 integrados diretamente à busca do GlobalLove.
+                </p>
+              </div>
+              <form onSubmit={handleKeywordSubmit} className="flex w-full md:w-auto gap-2">
+                <div className="relative flex-1 md:w-72">
+                  <Search className="size-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={keywordInput}
+                    onChange={(e) => setKeywordInput(e.target.value)}
+                    placeholder="Ex: free dating brazil, citas españa, 無料..."
+                    aria-label="Pesquisar filtro global por palavra-chave"
+                    className="w-full min-h-[44px] rounded-full border border-border bg-background pl-10 pr-4 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="min-h-[44px] rounded-full bg-brand px-5 py-2 text-xs font-bold text-primary-foreground shadow-soft shrink-0"
+                >
+                  Buscar
+                </button>
+              </form>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {GLOBAL_SEARCH_INTENTS.map((intent) => (
+                <button
+                  key={intent.id}
+                  type="button"
+                  onClick={() => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      ...intent.filterPatch,
+                      busca: intent.langLabels[currentLang],
+                    }));
+                    navigate(`/descobrir?q=${encodeURIComponent(intent.langLabels[currentLang])}`);
+                  }}
+                  className="rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-xs font-semibold text-foreground hover:border-primary/40 hover:bg-primary/5 transition"
+                >
+                  {intent.langLabels[currentLang]}
+                </button>
+              ))}
+              {[
+                { label: '🇺🇸 Free Dating', path: '/en/dating' },
+                { label: '🇪🇸 Citas Gratis', path: '/es/citas' },
+                { label: '🇫🇷 Rencontre', path: '/fr/rencontre' },
+                { label: '🇩🇪 Dating', path: '/de/dating' },
+                { label: '🇮🇹 Incontri', path: '/it/incontri' },
+                { label: '🇯🇵 無料出会い', path: '/ja/deai' },
+              ].map((routeLink) => (
+                <button
+                  key={routeLink.path}
+                  type="button"
+                  onClick={() => navigate(routeLink.path)}
+                  className="rounded-full border border-primary/25 bg-primary/5 px-3.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/15 transition"
+                >
+                  {routeLink.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>

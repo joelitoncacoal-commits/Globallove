@@ -3,7 +3,7 @@ import { Heart, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const Footer: React.FC = () => {
-  const { navigate, isAdmin } = useApp();
+  const { navigate } = useApp();
 
   return (
     <footer className="border-t border-border bg-card mt-auto pb-20 md:pb-0">
@@ -119,15 +119,6 @@ export const Footer: React.FC = () => {
           >
             São Paulo
           </button>
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => navigate('/admin')}
-              className="text-left font-bold text-rose-600 hover:text-rose-700 transition-colors"
-            >
-              Painel Admin
-            </button>
-          )}
         </nav>
       </div>
 

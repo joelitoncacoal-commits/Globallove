@@ -13,6 +13,9 @@ import {
   ChevronDown,
   ShieldAlert,
   Bell,
+  Eye,
+  CheckCheck,
+  BellRing,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { LANGUAGE_OPTIONS } from '../../i18n/translations';
@@ -23,11 +26,16 @@ export const Header: React.FC = () => {
     currentRoute,
     navigate,
     isLoggedIn,
-    isAdmin,
+    isOwnerAdmin,
     matches,
     notifications,
     unreadNotificationsCount,
     markNotificationRead,
+    markAllNotificationsRead,
+    browserNotifPermission,
+    browserNotifEnabled,
+    enableBrowserNotifications,
+    toggleBrowserNotifications,
     t,
     currentLang,
     setLang,
@@ -36,6 +44,7 @@ export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [notifFilter, setNotifFilter] = useState<'all' | 'unread'>('all');
 
   const totalUnread = matches.reduce((acc, m) => acc + (m.unreadCount || 0), 0);
 
@@ -156,7 +165,7 @@ export const Header: React.FC = () => {
               <User className="size-4" />
               {t.nav.profile}
             </button>
-            {isAdmin && (
+            {isOwnerAdmin && (
               <button
                 type="button"
                 onClick={() => handleNav('/admin')}
@@ -168,7 +177,7 @@ export const Header: React.FC = () => {
                 title="Painel Administrativo"
               >
                 <ShieldAlert className="size-3.5" />
-                <span>Admin</span>
+                <span>ADM</span>
               </button>
             )}
           </nav>
@@ -221,73 +230,253 @@ export const Header: React.FC = () => {
 
         {/* Right controls: Notifications + Language + Free badge */}
         <div className="flex items-center gap-2">
-          {/* Notifications Popover (Authenticated only) */}
-          {isLoggedIn && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setNotifOpen(!notifOpen);
-                  setLangDropdownOpen(false);
-                }}
-                aria-label="Notificações"
-                className="relative grid min-h-[44px] min-w-[44px] place-items-center rounded-full bg-card border border-border text-foreground hover:bg-muted transition"
-              >
-                <Bell className="size-4" />
-                {unreadNotificationsCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-coral text-[9px] font-bold text-white">
-                    {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-                  </span>
-                )}
-              </button>
+          {/* Bell / Sino Notification Center (Authenticated & Guest Preview) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setNotifOpen(!notifOpen);
+                setLangDropdownOpen(false);
+              }}
+              aria-label="Notificações"
+              title="Central de Notificações e Alertas no Navegador"
+              className="relative grid min-h-[44px] min-w-[44px] place-items-center rounded-full bg-card border border-border text-foreground hover:bg-muted transition"
+            >
+              <Bell className={`size-4 ${unreadNotificationsCount > 0 ? 'text-primary' : ''}`} />
+              {isLoggedIn && unreadNotificationsCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex size-4 items-center justify-center rounded-full bg-coral text-[9px] font-bold text-white">
+                  {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                </span>
+              )}
+              {!isLoggedIn && (
+                <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-coral animate-pulse" />
+              )}
+            </button>
 
-              {notifOpen && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-card border border-border shadow-xl p-2 z-50 animate-in fade-in zoom-in-95">
-                  <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/60">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Notificações
-                    </span>
+            {notifOpen && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-card border border-border shadow-xl p-3 z-50 animate-in fade-in zoom-in-95 space-y-2.5">
+                {isLoggedIn ? (
+                  <>
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
+                      <div className="flex items-center gap-1.5">
+                        <BellRing className="size-4 text-primary" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+                          Notificações
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {unreadNotificationsCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => void markAllNotificationsRead()}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                          >
+                            <CheckCheck className="size-3.5" /> Marcar lidas
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setNotifOpen(false)}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                          aria-label="Fechar notificações"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Google Chrome / Browser Push Opt-In Banner */}
+                    <div className="rounded-xl border border-border bg-muted/40 p-2.5 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-foreground truncate">
+                          Alertas no Google Chrome / Celular
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {browserNotifEnabled
+                            ? 'Ativo para visualizações, mensagens e matches.'
+                            : browserNotifPermission === 'denied'
+                            ? 'Bloqueado no navegador — libere no cadeado da URL.'
+                            : 'Receba avisos instantâneos fora da aba.'}
+                        </p>
+                      </div>
+                      {browserNotifEnabled ? (
+                        <button
+                          type="button"
+                          onClick={() => void toggleBrowserNotifications(false)}
+                          className="shrink-0 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 text-[10px] font-bold text-emerald-700 hover:bg-emerald-500/25"
+                        >
+                          Ativo ✓
+                        </button>
+                      ) : browserNotifPermission === 'denied' ? (
+                        <span className="shrink-0 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-bold text-amber-800">
+                          Bloqueado
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void enableBrowserNotifications()}
+                          className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-[10px] font-bold text-primary-foreground shadow-soft hover:opacity-95"
+                        >
+                          Ativar
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Filter Pills */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setNotifFilter('all')}
+                        className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                          notifFilter === 'all'
+                            ? 'bg-primary/15 text-primary'
+                            : 'text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        Todas ({notifications.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNotifFilter('unread')}
+                        className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                          notifFilter === 'unread'
+                            ? 'bg-coral/15 text-coral'
+                            : 'text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        Não lidas ({unreadNotificationsCount})
+                      </button>
+                    </div>
+
+                    {/* Activity Feed */}
+                    <div className="max-h-72 overflow-y-auto divide-y divide-border/50">
+                      {(notifFilter === 'unread'
+                        ? notifications.filter((n) => !n.read)
+                        : notifications
+                      ).length === 0 ? (
+                        <div className="p-5 text-center text-xs text-muted-foreground">
+                          {notifFilter === 'unread'
+                            ? 'Você leu todas as notificações.'
+                            : 'Nenhuma atividade recente ainda (curtidas, mensagens, visualizações de perfil e mural aparecem aqui).'}
+                        </div>
+                      ) : (
+                        (notifFilter === 'unread'
+                          ? notifications.filter((n) => !n.read)
+                          : notifications
+                        )
+                          .slice(0, 15)
+                          .map((n) => {
+                            const IconComp =
+                              n.type === 'profile_view'
+                                ? Eye
+                                : n.type === 'message'
+                                ? MessageCircle
+                                : n.type === 'like'
+                                ? Heart
+                                : n.type === 'match'
+                                ? Sparkles
+                                : n.type === 'mural'
+                                ? Compass
+                                : ShieldAlert;
+                            const iconTone =
+                              n.type === 'profile_view'
+                                ? 'bg-indigo-500/15 text-indigo-600'
+                                : n.type === 'message'
+                                ? 'bg-sky-500/15 text-sky-600'
+                                : n.type === 'like'
+                                ? 'bg-rose-500/15 text-rose-600'
+                                : n.type === 'match'
+                                ? 'bg-amber-500/15 text-amber-600'
+                                : n.type === 'mural'
+                                ? 'bg-emerald-500/15 text-emerald-600'
+                                : 'bg-muted text-foreground';
+                            return (
+                              <button
+                                key={n.id}
+                                type="button"
+                                onClick={async () => {
+                                  if (!n.read) await markNotificationRead(n.id);
+                                  setNotifOpen(false);
+                                  if (n.link) handleNav(n.link);
+                                }}
+                                className={`w-full text-left p-2.5 hover:bg-muted/70 transition rounded-xl flex items-start gap-2.5 ${
+                                  n.read ? 'opacity-70' : 'bg-primary/5'
+                                }`}
+                              >
+                                <span
+                                  className={`grid size-8 shrink-0 place-items-center rounded-xl ${iconTone}`}
+                                >
+                                  <IconComp className="size-4" />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-bold text-foreground line-clamp-1">
+                                      {n.title}
+                                    </span>
+                                    {!n.read && (
+                                      <span className="size-2 shrink-0 rounded-full bg-coral" />
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                                    {n.body}
+                                  </p>
+                                  <span className="text-[10px] text-muted-foreground/80 mt-1 block">
+                                    {n.createdAt}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-3 p-1">
+                    <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                      <div className="flex items-center gap-1.5">
+                        <BellRing className="size-4 text-primary" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+                          Alertas em Tempo Real
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setNotifOpen(false)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        aria-label="Fechar"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Entre na sua conta para acompanhar tudo no sino e receber notificações no Google Chrome / celular:
+                    </p>
+                    <ul className="space-y-1.5 text-[11px] font-medium text-foreground">
+                      <li className="flex items-center gap-2">
+                        <Eye className="size-3.5 text-indigo-600 shrink-0" /> Quem visualizou seu perfil
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <MessageCircle className="size-3.5 text-sky-600 shrink-0" /> Novas mensagens no chat
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Heart className="size-3.5 text-rose-600 shrink-0" /> Curtidas, Super Likes e Matches
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Compass className="size-3.5 text-emerald-600 shrink-0" /> Comentários e curtidas no Mural
+                      </li>
+                    </ul>
                     <button
                       type="button"
-                      onClick={() => setNotifOpen(false)}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => handleNav('/entrar')}
+                      className="w-full min-h-[42px] rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground shadow-soft"
                     >
-                      Fechar
+                      Entrar ou Criar Conta para Ativar
                     </button>
                   </div>
-                  <div className="max-h-72 overflow-y-auto divide-y divide-border/50">
-                    {notifications.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-muted-foreground">
-                        Nenhuma notificação recente.
-                      </div>
-                    ) : (
-                      notifications.slice(0, 10).map((n) => (
-                        <button
-                          key={n.id}
-                          type="button"
-                          onClick={async () => {
-                            if (!n.read) await markNotificationRead(n.id);
-                            setNotifOpen(false);
-                            if (n.link) handleNav(n.link);
-                          }}
-                          className={`w-full text-left p-3 hover:bg-muted/70 transition rounded-xl ${
-                            n.read ? 'opacity-70' : 'bg-primary/5'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-bold text-foreground line-clamp-1">{n.title}</span>
-                            {!n.read && <span className="size-2 shrink-0 rounded-full bg-coral" />}
-                          </div>
-                          <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{n.body}</p>
-                          <span className="text-[10px] text-muted-foreground/80 mt-1 block">{n.createdAt}</span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Language Switcher */}
           <div className="relative">
@@ -388,13 +577,13 @@ export const Header: React.FC = () => {
                 >
                   <ShieldAlert className="size-5 text-emerald-600" /> Segurança & Privacidade
                 </button>
-                {isAdmin && (
+                {isOwnerAdmin && (
                   <button
                     type="button"
                     onClick={() => handleNav('/admin')}
                     className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-left font-bold text-rose-700 bg-rose-500/10 border border-rose-500/20"
                   >
-                    <ShieldAlert className="size-5 text-rose-600" /> Painel Admin
+                    <ShieldAlert className="size-5 text-rose-600" /> Painel ADM
                   </button>
                 )}
               </>

@@ -94,15 +94,6 @@ export const Admin: React.FC = () => {
             Esta área é protegida por controle RBAC no servidor (Firestore Rules). Apenas contas autorizadas com e-mail verificado podem acessar dados de moderação.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            {!isLoggedIn && (
-              <button
-                type="button"
-                onClick={() => navigate('/entrar')}
-                className="min-h-[44px] rounded-full bg-brand px-6 py-2.5 text-xs font-bold text-primary-foreground shadow-soft"
-              >
-                Fazer Login Administrativo
-              </button>
-            )}
             <button
               type="button"
               onClick={() => navigate('/')}

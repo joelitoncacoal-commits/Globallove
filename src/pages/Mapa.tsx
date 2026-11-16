@@ -6,7 +6,7 @@ import { PAISES_DETALHES, CIDADES } from '../data/paises';
 import { Profile } from '../types';
 
 export const Mapa: React.FC = () => {
-  const { profiles, isLoggedIn, likeProfile, setFilters, navigate } = useApp();
+  const { profiles, isLoggedIn, likeProfile, recordProfileView, setFilters, navigate } = useApp();
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [activeRegion, setActiveRegion] = useState<string>('todos');
   const [countrySearch, setCountrySearch] = useState('');
@@ -144,7 +144,10 @@ export const Mapa: React.FC = () => {
               >
                 <button
                   type="button"
-                  onClick={() => setSelectedProfile(p)}
+                  onClick={() => {
+                    setSelectedProfile(p);
+                    void recordProfileView(p);
+                  }}
                   aria-label={`Ver ${p.nome} em ${p.cidade}, ${p.pais}`}
                   className={`relative flex items-center gap-1.5 rounded-full p-1.5 shadow-float transition-all duration-200 hover:scale-110 ${
                     isSelected ? 'bg-coral ring-4 ring-white scale-110' : 'bg-card border-2 border-white'

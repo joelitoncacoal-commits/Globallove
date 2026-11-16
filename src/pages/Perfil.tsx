@@ -14,6 +14,7 @@ import {
   KeyRound,
   Loader2,
   UserX,
+  BellRing,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COUNTRIES } from '../data/countries';
@@ -33,6 +34,9 @@ export const Perfil: React.FC = () => {
     blockedUsers,
     unblockUser,
     deleteMyAccount,
+    browserNotifEnabled,
+    browserNotifPermission,
+    toggleBrowserNotifications,
     showToast,
     navigate,
     t,
@@ -458,6 +462,26 @@ export const Perfil: React.FC = () => {
               type="checkbox"
               checked={privacy.showLocationOnMap}
               onChange={(e) => setPrivacy((p) => ({ ...p, showLocationOnMap: e.target.checked }))}
+              className="size-5 accent-primary"
+            />
+          </label>
+
+          <label className="flex items-center justify-between p-3 rounded-2xl border border-primary/20 bg-primary/5 cursor-pointer">
+            <div className="pr-3">
+              <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <BellRing className="size-3.5 text-primary" /> Notificações no Google Chrome / Celular
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {browserNotifPermission === 'denied'
+                  ? 'Bloqueado no navegador. Libere notificações nas permissões do site.'
+                  : 'Receba alertas instantâneos de quem viu seu perfil, mensagens, curtidas e matches.'}
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={browserNotifEnabled}
+              disabled={browserNotifPermission === 'unsupported'}
+              onChange={(e) => void toggleBrowserNotifications(e.target.checked)}
               className="size-5 accent-primary"
             />
           </label>
