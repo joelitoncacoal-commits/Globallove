@@ -1,0 +1,6 @@
+{
+  "name": "Órbita — Namoro e Encontro Grátis Global",
+  "description": "Plataforma 100% gratuita para conhecer pessoas, criar novas conexões, fazer amizades e descobrir relacionamentos em 92 países sem cobranças ou assinaturas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

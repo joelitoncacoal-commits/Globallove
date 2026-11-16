@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+:root {
+  --radius: 1.25rem;
+  --background: oklch(98.5% 0.012 70);
+  --foreground: oklch(24% 0.055 340);
+  --card: oklch(100% 0.004 80);
+  --card-foreground: oklch(24% 0.055 340);
+  --popover: oklch(100% 0.004 80);
+  --popover-foreground: oklch(24% 0.055 340);
+  --primary: oklch(56% 0.22 12);
+  --primary-foreground: oklch(99% 0.01 60);
+  --secondary: oklch(94% 0.03 60);
+  --secondary-foreground: oklch(30% 0.06 340);
+  --muted: oklch(95.5% 0.018 65);
+  --muted-foreground: oklch(52% 0.035 340);
+  --accent: oklch(90% 0.06 55);
+  --accent-foreground: oklch(30% 0.07 340);
+  --destructive: oklch(57.7% 0.245 27.325);
+  --destructive-foreground: oklch(99% 0.01 60);
+  --border: oklch(90% 0.02 60);
+  --input: oklch(90% 0.02 60);
+  --ring: oklch(60% 0.19 15);
+  --plum: oklch(32% 0.13 338);
+  --coral: oklch(64% 0.21 18);
+  --amber-soft: oklch(82% 0.15 66);
+  --sand: oklch(96% 0.03 70);
+  --gradient-brand: linear-gradient(135deg, var(--plum), var(--coral) 52%, var(--amber-soft));
+  --gradient-warm: linear-gradient(160deg, var(--amber-soft), var(--background) 60%);
+}
+
+@theme {
+  --font-display: "Fraunces", serif;
+  --font-sans: "Manrope", sans-serif;
+  
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  
+  --color-plum: var(--plum);
+  --color-coral: var(--coral);
+  --color-amber-soft: var(--amber-soft);
+  --color-sand: var(--sand);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+}
+
+.bg-brand {
+  background: var(--gradient-brand);
+}
+
+.bg-warm {
+  background: var(--gradient-warm);
+}
+
+.bg-sand {
+  background-color: var(--sand);
+}
+
+.text-plum {
+  color: var(--plum);
+}
+
+.text-coral {
+  color: var(--coral);
+}
+
+.shadow-soft {
+  box-shadow: 0 4px 20px -2px rgba(122, 46, 90, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-card {
+  box-shadow: 0 10px 30px -5px rgba(122, 46, 90, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-float {
+  box-shadow: 0 20px 40px -10px rgba(122, 46, 90, 0.22);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(80% 0.03 340);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(60% 0.06 340);
+}
