@@ -16,6 +16,7 @@ import {
   UserX,
   BellRing,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { COUNTRIES } from '../data/countries';
 import { LIFESTYLE_HABITS } from '../data/lifestyleHabits';
@@ -145,13 +146,12 @@ export const Perfil: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate('/descobrir')}
+          <Link
+            to="/descobrir"
             className="flex min-h-[42px] items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-xs font-bold text-foreground hover:bg-muted"
           >
             <Eye className="size-3.5" /> Descobrir
-          </button>
+          </Link>
           <button
             type="button"
             onClick={() => void logoutUser()}

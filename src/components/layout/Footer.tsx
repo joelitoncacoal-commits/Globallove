@@ -1,19 +1,16 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, ShieldCheck } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
 
 export const Footer: React.FC = () => {
-  const { navigate } = useApp();
-
   return (
     <footer className="border-t border-border bg-card mt-auto pb-20 md:pb-0">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 md:flex-row md:items-start md:justify-between">
         {/* Brand Column */}
         <div className="max-w-sm">
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2.5 text-left transition-transform active:scale-95"
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2.5 text-left transition-transform active:scale-95"
           >
             <span className="grid size-9 place-items-center rounded-xl bg-brand text-primary-foreground shadow-soft">
               <Heart className="size-4 fill-current" />
@@ -23,7 +20,7 @@ export const Footer: React.FC = () => {
               <span className="text-coral">Love</span>
               <span className="text-xs font-semibold text-muted-foreground ml-0.5">.com</span>
             </span>
-          </button>
+          </Link>
           <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
             Namoro, amizade e conexões reais em 92+ países (maiores de 18 anos). Plataforma 100% gratuita para toda a comunidade.
           </p>
@@ -33,92 +30,80 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Links Navigation */}
-        <nav aria-label="Rodapé" className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={() => navigate('/guias')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+        {/* Rich Semantic <a href> Crawl Grid (24+ links for global crawl hierarchy on every route) */}
+        <nav aria-label="Rodapé" className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-4">
+          <Link to="/guias" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Guias
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/sobre')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/sobre" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Sobre o GlobalLove.com
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/seguranca')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/seguranca" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Segurança
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/privacidade')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/privacidade" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Privacidade (LGPD)
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/termos')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/termos" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Termos de uso (18+)
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/contato')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/contato" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Contato e Suporte
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/mural')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/mural" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Mural Global
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/mapa')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/mapa" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Mapa de Países
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/planos')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/planos" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Plataforma 100% Gratuita
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/pais/brasil')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/pais/brasil" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Namoro no Brasil
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/pais/portugal')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/pais/portugal" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             Namoro em Portugal
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/cidade/sao-paulo')}
-            className="text-left text-muted-foreground hover:text-foreground transition-colors"
-          >
+          </Link>
+          <Link to="/pais/espanha" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Namoro na Espanha
+          </Link>
+          <Link to="/pais/estados-unidos" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Namoro nos EUA
+          </Link>
+          <Link to="/pais/franca" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Namoro na França
+          </Link>
+          <Link to="/pais/alemanha" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Namoro na Alemanha
+          </Link>
+          <Link to="/pais/italia" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Namoro na Itália
+          </Link>
+          <Link to="/pais/japao" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Namoro no Japão
+          </Link>
+          <Link to="/pais/canada" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Namoro no Canadá
+          </Link>
+          <Link to="/pais/reino-unido" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Reino Unido
+          </Link>
+          <Link to="/cidade/sao-paulo" className="text-left text-muted-foreground hover:text-foreground transition-colors">
             São Paulo
-          </button>
+          </Link>
+          <Link to="/cidade/rio-de-janeiro" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Rio de Janeiro
+          </Link>
+          <Link to="/cidade/lisboa" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Lisboa
+          </Link>
+          <Link to="/en/dating" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Free Dating (EN)
+          </Link>
+          <Link to="/es/citas" className="text-left text-muted-foreground hover:text-foreground transition-colors">
+            Citas Gratis (ES)
+          </Link>
         </nav>
       </div>
 

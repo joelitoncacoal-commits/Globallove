@@ -12,6 +12,7 @@ import {
   Loader2,
   X,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { compressImageUpload } from '../utils/security';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
@@ -127,13 +128,12 @@ export const Mural: React.FC = () => {
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Para proteger a privacidade de quem publica no Mural Global, entre com sua conta verificada (18+) para ler, curtir e comentar.
           </p>
-          <button
-            type="button"
-            onClick={() => navigate('/entrar')}
-            className="min-h-[44px] rounded-full bg-brand px-7 py-3 text-sm font-bold text-primary-foreground shadow-soft"
+          <Link
+            to="/entrar"
+            className="inline-flex items-center justify-center min-h-[44px] rounded-full bg-brand px-7 py-3 text-sm font-bold text-primary-foreground shadow-soft"
           >
             Entrar ou Criar Conta Grátis
-          </button>
+          </Link>
         </div>
       ) : (
         <>

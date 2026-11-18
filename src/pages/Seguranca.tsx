@@ -1,11 +1,9 @@
 import React from 'react';
-import { ShieldCheck, AlertTriangle, Lock, EyeOff, UserX, PhoneCall } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Link } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react';
 import { SEGURANCA_CONTEUDO } from '../data/institutional';
 
 export const Seguranca: React.FC = () => {
-  const { navigate } = useApp();
-
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-12">
       <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary mb-3 self-start">
@@ -51,12 +49,9 @@ export const Seguranca: React.FC = () => {
 
       <div className="mt-12 rounded-3xl border border-border bg-card p-6 text-center text-xs text-muted-foreground">
         Identificou algum comportamento suspeito? Entre em contato diretamente com nossa moderação na página de{' '}
-        <button
-          onClick={() => navigate('/contato')}
-          className="font-bold text-primary hover:underline"
-        >
+        <Link to="/contato" className="font-bold text-primary hover:underline">
           Contato
-        </button>
+        </Link>
         .
       </div>
     </div>

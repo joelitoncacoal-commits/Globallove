@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Crown,
   Check,
@@ -9,44 +10,47 @@ import {
   RotateCcw,
   Globe2,
   Flame,
-  ArrowRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Planos: React.FC = () => {
-  const { navigate } = useApp();
+  const { isLoggedIn } = useApp();
 
   const recursosLiberados = [
     {
       titulo: 'Veja quem curtiu você',
-      descricao: 'Descubra todos os perfis que demonstraram interesse em você sem nenhum tipo de borrão ou bloqueio.',
-      icone: Eye
+      descricao:
+        'Descubra todos os perfis que demonstraram interesse em você sem nenhum tipo de borrão ou bloqueio.',
+      icone: Eye,
     },
     {
       titulo: 'Curtidas ilimitadas todos os dias',
-      descricao: 'Curta quantos perfis quiser na sua cidade ou em outros países, sem limites diários.',
-      icone: Heart
+      descricao:
+        'Curta quantos perfis quiser na sua cidade ou em outros países, sem limites diários.',
+      icone: Heart,
     },
     {
       titulo: 'Desfazer e Voltar perfis (Rewind)',
       descricao: 'Passou alguém sem querer? Volte atrás a qualquer momento sem restrições.',
-      icone: RotateCcw
+      icone: RotateCcw,
     },
     {
       titulo: 'Filtro Global em 92 Países',
-      descricao: 'Navegue e conheça pessoas por país, idade, afinidade e distância sem pagar nada por isso.',
-      icone: Globe2
+      descricao:
+        'Navegue e conheça pessoas por país, idade, afinidade e distância sem pagar nada por isso.',
+      icone: Globe2,
     },
     {
       titulo: 'Conversas e Matches Liberados',
       descricao: 'Troque mensagens em tempo real imediatamente após o match, com privacidade total.',
-      icone: Sparkles
+      icone: Sparkles,
     },
     {
       titulo: 'Destaque no Mural da Comunidade',
-      descricao: 'Compartilhe seus pensamentos, viagens e fotos com visibilidade especial para todos os membros.',
-      icone: Flame
-    }
+      descricao:
+        'Compartilhe seus pensamentos, viagens e fotos com visibilidade especial para todos os membros.',
+      icone: Flame,
+    },
   ];
 
   return (
@@ -108,20 +112,20 @@ export const Planos: React.FC = () => {
           })}
         </div>
 
-        {/* Action Button */}
+        {/* Action Links */}
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button
-            onClick={() => navigate('/descobrir')}
+          <Link
+            to={isLoggedIn ? '/descobrir' : '/entrar'}
             className="flex items-center justify-center gap-2 rounded-full bg-brand px-8 py-4 text-sm font-bold text-primary-foreground shadow-soft hover:opacity-95 transition-transform active:scale-95 w-full sm:w-auto"
           >
             <Flame className="size-4.5" /> Começar a Descobrir Pessoas
-          </button>
-          <button
-            onClick={() => navigate('/matches')}
+          </Link>
+          <Link
+            to={isLoggedIn ? '/matches' : '/entrar'}
             className="flex items-center justify-center gap-2 rounded-full border border-border bg-card px-8 py-4 text-sm font-semibold text-foreground hover:bg-muted transition-colors w-full sm:w-auto"
           >
             <Eye className="size-4.5 text-primary" /> Ver Quem Me Curtiu
-          </button>
+          </Link>
         </div>
       </div>
 

@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Globe2, Heart, X, CheckCircle2, Search, ShieldCheck, Compass } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { COUNTRIES } from '../data/countries';
 import { PAISES_DETALHES, CIDADES } from '../data/paises';
+import { slugifyCountry } from '../data/seoKeywords';
 import { Profile } from '../types';
 
 export const Mapa: React.FC = () => {
-  const { profiles, isLoggedIn, likeProfile, recordProfileView, setFilters, navigate } = useApp();
+  const { profiles, isLoggedIn, likeProfile, recordProfileView, setFilters } = useApp();
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [activeRegion, setActiveRegion] = useState<string>('todos');
   const [countrySearch, setCountrySearch] = useState('');
@@ -40,9 +42,11 @@ export const Mapa: React.FC = () => {
     return list;
   }, [countrySearch]);
 
-  const exploreCountry = (countryName: string) => {
-    setFilters((prev) => ({ ...prev, pais: countryName }));
-    navigate(isLoggedIn ? '/descobrir' : '/entrar');
+  const getCountryRoute = (countryName: string) => {
+    const matched = PAISES_DETALHES.find(
+      (p) => p.nome.toLowerCase() === countryName.toLowerCase()
+    );
+    return `/pais/${matched ? matched.slug : slugifyCountry(countryName)}`;
   };
 
   return (
@@ -121,13 +125,12 @@ export const Mapa: React.FC = () => {
             <p className="mt-2 max-w-md text-xs sm:text-sm text-white/85 leading-relaxed">
               Por segurança (LGPD), os marcadores aproximados de membros ativos no mapa ficam visíveis apenas para contas cadastradas e verificadas.
             </p>
-            <button
-              type="button"
-              onClick={() => navigate('/entrar')}
-              className="mt-5 min-h-[44px] rounded-full bg-brand px-7 py-3 text-xs font-bold text-white shadow-soft"
+            <Link
+              to="/entrar"
+              className="mt-5 inline-flex items-center justify-center min-h-[44px] rounded-full bg-brand px-7 py-3 text-xs font-bold text-white shadow-soft"
             >
               Entrar para Ver Membros no Mapa
-            </button>
+            </Link>
           </div>
         )}
 
@@ -238,13 +241,13 @@ export const Mapa: React.FC = () => {
                 >
                   <Heart className="size-3.5 fill-current" /> Curtir
                 </button>
-                <button
-                  type="button"
-                  onClick={() => exploreCountry(selectedProfile.pais)}
-                  className="min-h-[42px] rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                <Link
+                  to={getCountryRoute(selectedProfile.pais)}
+                  onClick={() => setFilters((prev) => ({ ...prev, pais: selectedProfile.pais }))}
+                  className="inline-flex items-center justify-center min-h-[42px] rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted"
                 >
                   Ver país
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -276,15 +279,15 @@ export const Mapa: React.FC = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
           {matchingCountries.map((c) => (
-            <button
+            <Link
               key={c.code}
-              type="button"
-              onClick={() => exploreCountry(c.name)}
+              to={getCountryRoute(c.name)}
+              onClick={() => setFilters((prev) => ({ ...prev, pais: c.name }))}
               className="flex min-h-[44px] items-center gap-2 rounded-2xl border border-border bg-background px-3 py-2 text-left text-xs font-semibold text-foreground hover:border-primary/40 hover:bg-muted/40 transition"
             >
               <span className="text-lg shrink-0">{c.flag}</span>
               <span className="truncate">{c.name}</span>
-            </button>
+            </Link>
           ))}
         </div>
 
@@ -292,24 +295,22 @@ export const Mapa: React.FC = () => {
         <div className="border-t border-border pt-5 flex flex-wrap gap-2 items-center text-xs">
           <span className="font-bold text-muted-foreground mr-1">Guias de cidades e países:</span>
           {PAISES_DETALHES.slice(0, 6).map((p) => (
-            <button
+            <Link
               key={p.slug}
-              type="button"
-              onClick={() => navigate(`/pais/${p.slug}`)}
+              to={`/pais/${p.slug}`}
               className="rounded-xl bg-primary/10 px-3 py-1.5 font-semibold text-primary hover:bg-primary/20 transition"
             >
               {p.nome}
-            </button>
+            </Link>
           ))}
           {CIDADES.slice(0, 6).map((c) => (
-            <button
+            <Link
               key={c.slug}
-              type="button"
-              onClick={() => navigate(`/cidade/${c.slug}`)}
+              to={`/cidade/${c.slug}`}
               className="rounded-xl border border-border bg-background px-3 py-1.5 font-semibold text-foreground hover:bg-muted transition"
             >
               {c.nome}
-            </button>
+            </Link>
           ))}
         </div>
       </section>

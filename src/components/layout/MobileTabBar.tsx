@@ -1,9 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Flame, MapPin, Compass, Heart, MessageCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const MobileTabBar: React.FC = () => {
-  const { isLoggedIn, currentRoute, navigate, matches, incomingLikes, t } = useApp();
+  const { isLoggedIn, currentRoute, matches, incomingLikes, t } = useApp();
 
   if (!isLoggedIn) return null;
 
@@ -29,10 +30,9 @@ export const MobileTabBar: React.FC = () => {
           const active =
             path === item.path || (item.path === '/conversas' && path.startsWith('/conversas'));
           return (
-            <button
+            <Link
               key={item.path}
-              type="button"
-              onClick={() => navigate(item.path)}
+              to={item.path}
               aria-label={item.label}
               className={`relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-[10px] font-semibold transition-colors ${
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
@@ -47,7 +47,7 @@ export const MobileTabBar: React.FC = () => {
                 )}
               </div>
               <span className="truncate max-w-[64px]">{item.label}</span>
-            </button>
+            </Link>
           );
         })}
       </div>

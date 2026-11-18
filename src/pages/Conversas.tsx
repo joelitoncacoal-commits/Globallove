@@ -15,6 +15,7 @@ import {
   ShieldBan,
   Loader2,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { VideoCallModal } from '../components/chat/VideoCallModal';
 import { MediaAttachmentModal } from '../components/chat/MediaAttachmentModal';
@@ -147,13 +148,12 @@ export const Conversas: React.FC = () => {
         <p className="mt-2 text-sm text-muted-foreground">
           As conversas são liberadas automaticamente quando ocorre um match mútuo.
         </p>
-        <button
-          type="button"
-          onClick={() => navigate('/descobrir')}
-          className="mt-6 min-h-[44px] rounded-full bg-brand px-6 py-3 text-sm font-bold text-primary-foreground shadow-soft"
+        <Link
+          to="/descobrir"
+          className="mt-6 inline-flex items-center justify-center min-h-[44px] rounded-full bg-brand px-6 py-3 text-sm font-bold text-primary-foreground shadow-soft"
         >
           {t.nav.discover}
-        </button>
+        </Link>
       </div>
     );
   }
@@ -177,12 +177,11 @@ export const Conversas: React.FC = () => {
           {matches.map((item) => {
             const isSelected = item.id === activeMatch?.id;
             return (
-              <button
+              <Link
                 key={item.id}
-                type="button"
+                to={`/conversas/${item.id}`}
                 onClick={() => {
                   setSelectedMatchId(item.id);
-                  navigate(`/conversas/${item.id}`);
                 }}
                 className={`flex min-h-[68px] w-full items-center gap-3.5 p-4 text-left transition-colors ${
                   isSelected ? 'bg-primary/10' : 'hover:bg-muted/70'
@@ -219,7 +218,7 @@ export const Conversas: React.FC = () => {
                     {item.unreadCount}
                   </span>
                 ) : null}
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -231,14 +230,13 @@ export const Conversas: React.FC = () => {
           {/* Chat Header */}
           <div className="flex items-center justify-between gap-2 border-b border-border bg-background/80 px-3 sm:px-4 py-2.5 backdrop-blur-md">
             <div className="flex items-center gap-2.5 min-w-0">
-              <button
-                type="button"
-                onClick={() => navigate('/conversas')}
+              <Link
+                to="/conversas"
                 aria-label="Voltar para conversas"
                 className="grid min-h-[44px] min-w-[44px] place-items-center rounded-full text-muted-foreground hover:bg-muted sm:hidden shrink-0"
               >
                 <ArrowLeft className="size-5" />
-              </button>
+              </Link>
 
               <div className="relative size-10 overflow-hidden rounded-full shadow-soft ring-1 ring-border shrink-0 bg-muted">
                 <img
@@ -307,15 +305,14 @@ export const Conversas: React.FC = () => {
                 <ShieldBan className="size-4" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => navigate('/seguranca')}
+              <Link
+                to="/seguranca"
                 aria-label="Dicas de segurança"
                 title="Dicas de segurança"
                 className="hidden sm:grid min-h-[40px] min-w-[40px] place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <ShieldCheck className="size-4 text-primary" />
-              </button>
+              </Link>
             </div>
           </div>
 

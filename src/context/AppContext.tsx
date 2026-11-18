@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import {
   User,
@@ -85,7 +86,6 @@ import {
 } from '../services/firestoreService';
 import { doesInterestMatchGender, formatLocalizedDateTime, formatLocalizedTime } from '../utils/localization';
 import { detectBrowserLanguage, getTranslations, TranslationStrings } from '../i18n/translations';
-import { resolveRouteSEO, applyDocumentSEO } from '../utils/seo';
 import { matchesMultilingualQuery, parseQueryToFilters } from '../data/seoKeywords';
 import {
   BrowserNotifPermission,
@@ -324,34 +324,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const t = useMemo(() => getTranslations(currentLang), [currentLang]);
 
-  // 2. Navigation state (preserves path + query parameters for deep filter links)
-  const [currentRoute, setCurrentRoute] = useState<string>(
-    () => (window.location.pathname || '/') + (window.location.search || '')
+  // 2. React Router navigation & route location sync
+  const routerNavigate = useNavigate();
+  const location = useLocation();
+  const currentRoute = useMemo(
+    () => (location.pathname || '/') + (location.search || ''),
+    [location.pathname, location.search]
   );
 
-  const navigate = useCallback((path: string) => {
-    const clean = path.startsWith('/') ? path : `/${path}`;
-    const fullNow = (window.location.pathname || '/') + (window.location.search || '');
-    if (fullNow !== clean) {
-      window.history.pushState({}, '', clean);
-    }
-    setCurrentRoute(clean);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  const navigate = useCallback(
+    (path: string) => {
+      const clean = path.startsWith('/') ? path : `/${path}`;
+      const fullNow = (location.pathname || '/') + (location.search || '');
+      if (fullNow !== clean) {
+        routerNavigate(clean);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [location.pathname, location.search, routerNavigate]
+  );
 
+  // Auto-sync language & URL filter parameters from React Router location
   useEffect(() => {
-    const handlePopState = () => {
-      setCurrentRoute((window.location.pathname || '/') + (window.location.search || ''));
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Auto-sync language & URL filter parameters + update SEO metadata dynamically
-  useEffect(() => {
-    const [rawPath, rawSearch] = currentRoute.split('?');
-    const path = rawPath.replace(/\/+$/, '') || '/';
-    const params = new URLSearchParams(rawSearch || '');
+    const path = location.pathname.replace(/\/+$/, '') || '/';
+    const params = new URLSearchParams(location.search || '');
 
     const queryLang = params.get('lang') as SupportedLang | null;
     const validLangs: SupportedLang[] = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'zh'];
@@ -381,10 +377,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...(qCity ? { cidade: qCity } : {}),
       }));
     }
-
-    const seoPayload = resolveRouteSEO(path, mappedLang || currentLang);
-    applyDocumentSEO(seoPayload);
-  }, [currentRoute, currentLang]);
+  }, [location.pathname, location.search, currentLang]);
 
   // 3. Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);

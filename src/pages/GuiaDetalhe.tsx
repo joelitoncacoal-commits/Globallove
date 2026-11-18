@@ -1,21 +1,30 @@
 import React from 'react';
-import { ArrowLeft, BookOpen, Clock, Calendar, Share2, Sparkles } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Clock, Calendar } from 'lucide-react';
 import { getGuiaBySlug, GUIAS } from '../data/guias';
+import { useApp } from '../context/AppContext';
+import { Seo } from '../components/Seo';
 
 export const GuiaDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
-  const { navigate } = useApp();
+  const { isLoggedIn, currentLang } = useApp();
   const guia = getGuiaBySlug(slug) || GUIAS[0];
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-10">
-      {/* Back button */}
-      <button
-        onClick={() => navigate('/guias')}
+      <Seo
+        path={`/guias/${slug}`}
+        lang={currentLang}
+        title={`${guia.titulo} — GlobalLove.com`}
+        description={guia.descricao}
+      />
+
+      {/* Back link */}
+      <Link
+        to="/guias"
         className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-8 self-start transition-colors"
       >
         <ArrowLeft className="size-4" /> Voltar aos Guias
-      </button>
+      </Link>
 
       {/* Meta Bar */}
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-medium mb-3">
@@ -94,12 +103,12 @@ export const GuiaDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
         <p className="mt-2 text-sm text-primary-foreground/90 max-w-md mx-auto">
           Crie seu perfil no GlobalLove.com e comece a descobrir pessoas hoje mesmo em mais de 92 países.
         </p>
-        <button
-          onClick={() => navigate('/descobrir')}
-          className="mt-6 rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95 transition-transform active:scale-95"
+        <Link
+          to={isLoggedIn ? '/descobrir' : '/entrar'}
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95 transition-transform active:scale-95"
         >
           Criar meu perfil grátis
-        </button>
+        </Link>
       </div>
     </div>
   );

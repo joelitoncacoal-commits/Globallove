@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Mail, Send, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const Contato: React.FC = () => {
-  const { navigate, isLoggedIn, user, submitSupportTicket } = useApp();
+  const { isLoggedIn, user, submitSupportTicket } = useApp();
 
   const [nome, setNome] = useState(user.nome || '');
   const [email, setEmail] = useState(user.email || '');
@@ -67,13 +68,12 @@ export const Contato: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate(isLoggedIn ? '/descobrir' : '/entrar')}
-          className="min-h-[44px] rounded-full bg-brand px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-soft active:scale-95 shrink-0"
+        <Link
+          to={isLoggedIn ? '/descobrir' : '/entrar'}
+          className="inline-flex items-center justify-center min-h-[44px] rounded-full bg-brand px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-soft active:scale-95 shrink-0"
         >
           {isLoggedIn ? 'Voltar ao Descobrir' : 'Acessar Conta'}
-        </button>
+        </Link>
       </div>
 
       {/* Contact Form */}

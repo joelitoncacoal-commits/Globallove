@@ -10,6 +10,7 @@ import {
   ShieldBan,
   Star,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ReportModal } from '../components/modals/ReportModal';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
@@ -21,7 +22,6 @@ export const Matches: React.FC = () => {
     likeProfile,
     passProfile,
     blockUser,
-    navigate,
   } = useApp();
 
   const [reportTarget, setReportTarget] = useState<{ id: string; name: string } | null>(null);
@@ -43,13 +43,12 @@ export const Matches: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate('/descobrir')}
+        <Link
+          to="/descobrir"
           className="flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-brand px-6 py-2.5 text-xs font-bold text-primary-foreground shadow-soft active:scale-95 self-start sm:self-auto"
         >
           <Flame className="size-4" /> Continuar Descobrindo
-        </button>
+        </Link>
       </div>
 
       {/* Real Incoming Likes Section */}
@@ -200,13 +199,12 @@ export const Matches: React.FC = () => {
                     </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/conversas/${item.id}`)}
+                  <Link
+                    to={`/conversas/${item.id}`}
                     className="flex min-h-[40px] items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground shadow-soft transition-transform active:scale-95"
                   >
                     <MessageCircle className="size-3.5" /> Conversar
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -221,13 +219,12 @@ export const Matches: React.FC = () => {
           <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
             Continue explorando perfis e curtindo pessoas que você gostaria de conhecer. Assim que o interesse for mútuo, o match aparecerá aqui!
           </p>
-          <button
-            type="button"
-            onClick={() => navigate('/descobrir')}
-            className="mt-6 min-h-[44px] rounded-full bg-brand px-6 py-3 text-sm font-bold text-primary-foreground shadow-soft"
+          <Link
+            to="/descobrir"
+            className="mt-6 inline-flex items-center justify-center min-h-[44px] rounded-full bg-brand px-6 py-3 text-sm font-bold text-primary-foreground shadow-soft"
           >
             Começar a Curtir
-          </button>
+          </Link>
         </div>
       )}
 

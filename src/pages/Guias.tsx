@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { BookOpen, ArrowRight, Search, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { BookOpen, ArrowRight, Search } from 'lucide-react';
 import { GUIAS } from '../data/guias';
-import { useApp } from '../context/AppContext';
 
 export const Guias: React.FC = () => {
-  const { navigate } = useApp();
   const [search, setSearch] = useState('');
 
-  const filtered = GUIAS.filter(g =>
-    g.titulo.toLowerCase().includes(search.toLowerCase()) ||
-    g.descricao.toLowerCase().includes(search.toLowerCase())
+  const filtered = GUIAS.filter(
+    (g) =>
+      g.titulo.toLowerCase().includes(search.toLowerCase()) ||
+      g.descricao.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -44,10 +44,10 @@ export const Guias: React.FC = () => {
       {/* Guides Grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((guia) => (
-          <article
+          <Link
             key={guia.slug}
-            onClick={() => navigate(`/guias/${guia.slug}`)}
-            className="group flex flex-col justify-between rounded-3xl border border-border bg-card p-6 shadow-soft cursor-pointer transition-all hover:border-primary/40 hover:shadow-card hover:-translate-y-0.5"
+            to={`/guias/${guia.slug}`}
+            className="group flex flex-col justify-between rounded-3xl border border-border bg-card p-6 shadow-soft transition-all hover:border-primary/40 hover:shadow-card hover:-translate-y-0.5"
           >
             <div>
               <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground mb-3">
@@ -70,7 +70,7 @@ export const Guias: React.FC = () => {
               <span>Ler guia completo</span>
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
             </div>
-          </article>
+          </Link>
         ))}
       </div>
     </div>

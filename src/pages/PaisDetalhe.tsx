@@ -1,12 +1,15 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowLeft, Globe2, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { PAISES_DETALHES, CIDADES } from '../data/paises';
 import { COUNTRIES } from '../data/countries';
 import { slugifyCountry, getMultilingualCountryKeywords } from '../data/seoKeywords';
+import { Seo } from '../components/Seo';
+import { getSiteUrl } from '../utils/seo';
 
 export const PaisDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
-  const { navigate, isLoggedIn, setFilters } = useApp();
+  const { isLoggedIn, setFilters, currentLang } = useApp();
 
   const detailedCountry = PAISES_DETALHES.find((p) => p.slug === slug);
   const dynamicCountryMeta =
@@ -47,27 +50,39 @@ export const PaisDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
     ],
   };
 
+  const countryName = dynamicCountryMeta?.name || paisItem.nome;
+  const targetRoute = isLoggedIn
+    ? `/descobrir?pais=${encodeURIComponent(countryName)}`
+    : '/entrar';
   const keywordsPreview = getMultilingualCountryKeywords(paisItem.nome).slice(0, 8);
-
-  const handleExploreCountry = () => {
-    setFilters((prev) => ({
-      ...prev,
-      pais: dynamicCountryMeta?.name || paisItem.nome,
-      cidade: '',
-      busca: '',
-    }));
-    navigate(isLoggedIn ? '/descobrir' : '/entrar');
-  };
+  const siteUrl = getSiteUrl();
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col px-4 py-10 pb-24 md:pb-12">
-      <button
-        type="button"
-        onClick={() => navigate('/')}
+      <Seo
+        path={`/pais/${slug}`}
+        lang={currentLang}
+        title={`${paisItem.titulo}${paisItem.titulo.includes('GlobalLove') ? '' : ' | GlobalLove.com'}`}
+        description={paisItem.descricao}
+        keywords={getMultilingualCountryKeywords(paisItem.nome).join(', ')}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          url: `${siteUrl}/pais/${slug}`,
+          mainEntity: (paisItem.faq || []).map((f) => ({
+            '@type': 'Question',
+            name: f.pergunta,
+            acceptedAnswer: { '@type': 'Answer', text: f.resposta },
+          })),
+        }}
+      />
+
+      <Link
+        to="/"
         className="flex min-h-[40px] items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-8 self-start transition-colors"
       >
         <ArrowLeft className="size-4" /> Voltar à Página Inicial
-      </button>
+      </Link>
 
       <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-3 self-start">
         <Globe2 className="size-3.5" /> Namoro Internacional {dynamicCountryMeta?.flag || '🌍'}
@@ -84,14 +99,21 @@ export const PaisDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
       {/* Multilingual Quick Discovery Chips */}
       <div className="mt-5 flex flex-wrap gap-2">
         {keywordsPreview.map((kw) => (
-          <button
+          <Link
             key={kw}
-            type="button"
-            onClick={handleExploreCountry}
+            to={targetRoute}
+            onClick={() =>
+              setFilters((prev) => ({
+                ...prev,
+                pais: countryName,
+                cidade: '',
+                busca: '',
+              }))
+            }
             className="rounded-full border border-border bg-muted/40 px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground transition"
           >
             {kw}
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -129,15 +151,14 @@ export const PaisDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
       {CIDADES.length > 0 && (
         <div className="mt-10 flex flex-wrap gap-2 items-center text-xs">
           <span className="font-bold text-muted-foreground mr-1">Cidades populares:</span>
-          {CIDADES.slice(0, 6).map((c) => (
-            <button
+          {CIDADES.map((c) => (
+            <Link
               key={c.slug}
-              type="button"
-              onClick={() => navigate(`/cidade/${c.slug}`)}
+              to={`/cidade/${c.slug}`}
               className="rounded-xl border border-border bg-card px-3 py-1.5 font-semibold text-foreground hover:border-primary/40"
             >
               {c.nome}
-            </button>
+            </Link>
           ))}
         </div>
       )}
@@ -150,13 +171,20 @@ export const PaisDetalhe: React.FC<{ slug: string }> = ({ slug }) => {
         <p className="mt-2 text-xs text-primary-foreground/90 max-w-md mx-auto">
           Filtre perfis verificados em {paisItem.nome} e inicie conversas respeitosas gratuitamente.
         </p>
-        <button
-          type="button"
-          onClick={handleExploreCountry}
-          className="mt-5 min-h-[44px] rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95"
+        <Link
+          to={targetRoute}
+          onClick={() =>
+            setFilters((prev) => ({
+              ...prev,
+              pais: countryName,
+              cidade: '',
+              busca: '',
+            }))
+          }
+          className="mt-5 inline-flex items-center justify-center min-h-[44px] rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95"
         >
           Explorar Perfis em {paisItem.nome}
-        </button>
+        </Link>
       </div>
     </div>
   );

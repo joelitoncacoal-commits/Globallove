@@ -1,10 +1,11 @@
 import React from 'react';
-import { Sparkles, Globe2, ShieldCheck, Heart, ArrowRight } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Link } from 'react-router-dom';
+import { Sparkles } from 'lucide-react';
 import { SOBRE_CONTEUDO } from '../data/institutional';
+import { useApp } from '../context/AppContext';
 
 export const Sobre: React.FC = () => {
-  const { navigate } = useApp();
+  const { isLoggedIn } = useApp();
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-12">
@@ -39,15 +40,15 @@ export const Sobre: React.FC = () => {
       </div>
 
       <div className="mt-10 flex flex-wrap gap-4 text-sm font-semibold text-primary">
-        <button onClick={() => navigate('/guias')} className="hover:underline">
+        <Link to="/guias" className="hover:underline">
           Ler os guias →
-        </button>
-        <button onClick={() => navigate('/seguranca')} className="hover:underline">
+        </Link>
+        <Link to="/seguranca" className="hover:underline">
           Dicas de segurança →
-        </button>
-        <button onClick={() => navigate('/contato')} className="hover:underline">
+        </Link>
+        <Link to="/contato" className="hover:underline">
           Falar com a equipe →
-        </button>
+        </Link>
       </div>
 
       <div className="mt-12 rounded-3xl bg-brand p-8 text-center text-primary-foreground shadow-card">
@@ -55,12 +56,12 @@ export const Sobre: React.FC = () => {
         <p className="mt-2 text-xs text-primary-foreground/90 max-w-sm mx-auto">
           Crie seu perfil e descubra novas conexões hoje mesmo.
         </p>
-        <button
-          onClick={() => navigate('/descobrir')}
-          className="mt-5 rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95"
+        <Link
+          to={isLoggedIn ? '/descobrir' : '/entrar'}
+          className="mt-5 inline-flex items-center justify-center rounded-full bg-background px-8 py-3 text-sm font-bold text-foreground shadow-soft hover:opacity-95"
         >
           Criar meu perfil grátis
-        </button>
+        </Link>
       </div>
     </div>
   );

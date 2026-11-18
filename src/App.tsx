@@ -1,4 +1,5 @@
 import React from 'react';
+import { Routes, Route, useLocation, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/layout/Header';
@@ -6,6 +7,7 @@ import { Footer } from './components/layout/Footer';
 import { MobileTabBar } from './components/layout/MobileTabBar';
 import { ToastViewport } from './components/layout/ToastViewport';
 import { MatchModal } from './components/modals/MatchModal';
+import { Seo } from './components/Seo';
 
 // Pages
 import { Home } from './pages/Home';
@@ -28,17 +30,13 @@ import { Termos } from './pages/Termos';
 import { Contato } from './pages/Contato';
 import { Admin } from './pages/Admin';
 
-const RouterView: React.FC = () => {
-  const { currentRoute, isLoggedIn, authReady, needsVerification, needsOnboarding } = useApp();
+const ProtectedRoute: React.FC<{ children: React.ReactNode; requireAdmin?: boolean }> = ({
+  children,
+  requireAdmin = false,
+}) => {
+  const { isLoggedIn, authReady, needsVerification, needsOnboarding } = useApp();
 
-  // Normalize path
-  const path = currentRoute.split('?')[0].replace(/\/+$/, '') || '/';
-
-  // Wait for Firebase Auth bootstrap before rendering protected screens
-  const protectedRoutes = ['/descobrir', '/matches', '/perfil'];
-  const isProtected = protectedRoutes.includes(path) || path.startsWith('/conversas');
-
-  if (!authReady && (isProtected || path === '/admin' || path === '/entrar')) {
+  if (!authReady) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4">
         <Loader2 className="size-8 animate-spin text-primary" />
@@ -47,7 +45,11 @@ const RouterView: React.FC = () => {
     );
   }
 
-  if (isProtected && !isLoggedIn) {
+  if (requireAdmin) {
+    return <>{children}</>;
+  }
+
+  if (!isLoggedIn) {
     let notice =
       'Para ver perfis reais, dar likes, conversar no chat e fazer chamadas no GlobalLove.com, entre com sua conta verificada (18+).';
     if (needsVerification) {
@@ -58,49 +60,125 @@ const RouterView: React.FC = () => {
     return <Entrar redirectNotice={notice} />;
   }
 
-  // 1. Static and App Routes
-  if (path === '/') return <Home />;
-  if (path === '/admin') return <Admin />;
-  if (path === '/descobrir') return <Descobrir />;
-  if (path === '/mapa') return <Mapa />;
-  if (path === '/mural') return <Mural />;
-  if (path === '/matches') return <Matches />;
-  if (path.startsWith('/conversas')) return <Conversas />;
-  if (path === '/perfil') return <Perfil />;
-  if (path === '/planos' || path === '/planos-retorno') return <Planos />;
-  if (path === '/entrar') return <Entrar />;
-  if (path === '/guias') return <Guias />;
-  if (path === '/sobre') return <Sobre />;
-  if (path === '/seguranca') return <Seguranca />;
-  if (path === '/privacidade') return <Privacidade />;
-  if (path === '/termos') return <Termos />;
-  if (path === '/contato') return <Contato />;
+  return <>{children}</>;
+};
 
-  // 2. Dynamic Guide Slug: /guias/:slug
-  if (path.startsWith('/guias/')) {
-    const slug = path.replace('/guias/', '');
-    return <GuiaDetalhe slug={slug} />;
+const GuiaRoute: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  return <GuiaDetalhe slug={slug || ''} />;
+};
+
+const PaisRoute: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  return <PaisDetalhe slug={slug || ''} />;
+};
+
+const CidadeRoute: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  return <CidadeDetalhe slug={slug || ''} />;
+};
+
+const EntrarRoute: React.FC = () => {
+  const { authReady } = useApp();
+  if (!authReady) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-4">
+        <Loader2 className="size-8 animate-spin text-primary" />
+        <p className="text-sm font-medium text-muted-foreground">Carregando sua sessão segura...</p>
+      </div>
+    );
   }
+  return <Entrar />;
+};
 
-  // 3. Dynamic Country Slug: /pais/:slug or /encontros/:slug
-  if (path.startsWith('/pais/') || path.startsWith('/encontros/')) {
-    const slug = path.replace(/^\/(pais|encontros)\//, '');
-    return <PaisDetalhe slug={slug} />;
-  }
+const RouterView: React.FC = () => {
+  const { currentLang } = useApp();
+  const location = useLocation();
 
-  // 4. Dynamic City Slug: /cidade/:slug or /namoro/:slug
-  if (path.startsWith('/cidade/') || path.startsWith('/namoro/')) {
-    const slug = path.replace(/^\/(cidade|namoro)\//, '');
-    return <CidadeDetalhe slug={slug} />;
-  }
+  return (
+    <>
+      <Seo path={location.pathname} lang={currentLang} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/mapa" element={<Mapa />} />
+        <Route path="/mural" element={<Mural />} />
+        <Route path="/planos" element={<Planos />} />
+        <Route path="/planos-retorno" element={<Planos />} />
+        <Route path="/entrar" element={<EntrarRoute />} />
+        <Route path="/guias" element={<Guias />} />
+        <Route path="/guias/:slug" element={<GuiaRoute />} />
+        <Route path="/pais/:slug" element={<PaisRoute />} />
+        <Route path="/encontros/:slug" element={<PaisRoute />} />
+        <Route path="/cidade/:slug" element={<CidadeRoute />} />
+        <Route path="/namoro/:slug" element={<CidadeRoute />} />
+        <Route path="/sobre" element={<Sobre />} />
+        <Route path="/seguranca" element={<Seguranca />} />
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/termos" element={<Termos />} />
+        <Route path="/contato" element={<Contato />} />
 
-  // 5. Multi-language international landing routes
-  if (['/en/dating', '/es/citas', '/fr/rencontre', '/de/dating', '/it/incontri', '/ja/deai'].includes(path)) {
-    return <Home />;
-  }
+        {/* International Landing Routes */}
+        <Route path="/en/dating" element={<Home />} />
+        <Route path="/es/citas" element={<Home />} />
+        <Route path="/fr/rencontre" element={<Home />} />
+        <Route path="/de/dating" element={<Home />} />
+        <Route path="/it/incontri" element={<Home />} />
+        <Route path="/ja/deai" element={<Home />} />
 
-  // Default fallback
-  return <Home />;
+        {/* Protected Authenticated Routes */}
+        <Route
+          path="/descobrir"
+          element={
+            <ProtectedRoute>
+              <Descobrir />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches"
+          element={
+            <ProtectedRoute>
+              <Matches />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/conversas"
+          element={
+            <ProtectedRoute>
+              <Conversas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/conversas/:matchId"
+          element={
+            <ProtectedRoute>
+              <Conversas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/perfil"
+          element={
+            <ProtectedRoute>
+              <Perfil />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<Home />} />
+      </Routes>
+    </>
+  );
 };
 
 export default function App() {

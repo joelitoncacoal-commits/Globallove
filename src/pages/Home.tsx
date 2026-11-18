@@ -14,6 +14,7 @@ import {
   Lock,
   Search,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { COUNTRIES } from '../data/countries';
 import { GUIAS } from '../data/guias';
@@ -41,15 +42,11 @@ export const Home: React.FC = () => {
     setOpenFaq(openFaq === index ? null : index);
   };
 
-  const handleCountryClick = (countryName: string) => {
+  const getCountryRoute = (countryName: string) => {
     const matchedDetail = PAISES_DETALHES.find(
       (p) => p.nome.toLowerCase() === countryName.toLowerCase()
     );
-    if (matchedDetail) {
-      navigate(`/pais/${matchedDetail.slug}`);
-      return;
-    }
-    navigate(`/pais/${slugifyCountry(countryName)}`);
+    return `/pais/${matchedDetail ? matchedDetail.slug : slugifyCountry(countryName)}`;
   };
 
   const handleKeywordSubmit = (e: React.FormEvent) => {
@@ -87,20 +84,18 @@ export const Home: React.FC = () => {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
-              <button
-                type="button"
-                onClick={() => navigate(isLoggedIn ? '/descobrir' : '/entrar')}
+              <Link
+                to={isLoggedIn ? '/descobrir' : '/entrar'}
                 className="flex min-h-[48px] items-center gap-2.5 rounded-full bg-brand px-7 sm:px-8 py-3.5 text-sm sm:text-base font-bold text-primary-foreground shadow-card transition-all hover:opacity-95 active:scale-95"
               >
                 <Flame className="size-5" /> {isLoggedIn ? t.hero.ctaPrimary : 'Criar Conta Grátis (18+)'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/mapa')}
+              </Link>
+              <Link
+                to="/mapa"
                 className="flex min-h-[48px] items-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-sm sm:text-base font-semibold text-foreground hover:bg-muted transition-colors"
               >
                 <Globe2 className="size-4 text-primary" /> {t.hero.ctaSecondary}
-              </button>
+              </Link>
             </div>
 
             {/* Trust Metrics (Truthful Platform Capabilities) */}
@@ -168,20 +163,18 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => navigate(isLoggedIn ? '/descobrir' : '/entrar')}
-                  className="min-h-[46px] w-full rounded-full bg-brand py-3 text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95"
+                <Link
+                  to={isLoggedIn ? '/descobrir' : '/entrar'}
+                  className="flex items-center justify-center min-h-[46px] w-full rounded-full bg-brand py-3 text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95"
                 >
                   {isLoggedIn ? 'Ir para Descobrir' : 'Começar Agora Gratuitamente'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/seguranca')}
-                  className="min-h-[44px] w-full rounded-full border border-border bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition"
+                </Link>
+                <Link
+                  to="/seguranca"
+                  className="flex items-center justify-center min-h-[44px] w-full rounded-full border border-border bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition"
                 >
                   Conhecer nossos padrões de segurança
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -273,41 +266,40 @@ export const Home: React.FC = () => {
 
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {filteredCountries.map((country) => (
-              <button
+              <Link
                 key={country.code}
-                type="button"
-                onClick={() => handleCountryClick(country.name)}
+                to={getCountryRoute(country.name)}
                 className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-border bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-soft"
               >
                 <span className="text-xl shrink-0">{country.flag}</span>
                 <span className="text-xs font-semibold text-foreground truncate">
                   {country.name}
                 </span>
-              </button>
+              </Link>
             ))}
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 justify-center text-xs text-muted-foreground">
             <span>Destinos em destaque:</span>
-            <button type="button" onClick={() => navigate('/pais/brasil')} className="text-primary font-bold hover:underline">
+            <Link to="/pais/brasil" className="text-primary font-bold hover:underline">
               Brasil 🇧🇷
-            </button>
+            </Link>
             <span>•</span>
-            <button type="button" onClick={() => navigate('/pais/portugal')} className="text-primary font-bold hover:underline">
+            <Link to="/pais/portugal" className="text-primary font-bold hover:underline">
               Portugal 🇵🇹
-            </button>
+            </Link>
             <span>•</span>
-            <button type="button" onClick={() => navigate('/pais/espanha')} className="text-primary font-bold hover:underline">
+            <Link to="/pais/espanha" className="text-primary font-bold hover:underline">
               Espanha 🇪🇸
-            </button>
+            </Link>
             <span>•</span>
-            <button type="button" onClick={() => navigate('/pais/estados-unidos')} className="text-primary font-bold hover:underline">
+            <Link to="/pais/estados-unidos" className="text-primary font-bold hover:underline">
               Estados Unidos 🇺🇸
-            </button>
+            </Link>
             <span>•</span>
-            <button type="button" onClick={() => navigate('/pais/japao')} className="text-primary font-bold hover:underline">
+            <Link to="/pais/japao" className="text-primary font-bold hover:underline">
               Japão 🇯🇵
-            </button>
+            </Link>
           </div>
 
           {/* Multilingual Semantic Keyword & Intent Filters */}
@@ -347,21 +339,20 @@ export const Home: React.FC = () => {
 
             <div className="flex flex-wrap gap-2">
               {GLOBAL_SEARCH_INTENTS.map((intent) => (
-                <button
+                <Link
                   key={intent.id}
-                  type="button"
+                  to={`/descobrir?q=${encodeURIComponent(intent.langLabels[currentLang])}`}
                   onClick={() => {
                     setFilters((prev) => ({
                       ...prev,
                       ...intent.filterPatch,
                       busca: intent.langLabels[currentLang],
                     }));
-                    navigate(`/descobrir?q=${encodeURIComponent(intent.langLabels[currentLang])}`);
                   }}
                   className="rounded-full border border-border bg-muted/40 px-3.5 py-1.5 text-xs font-semibold text-foreground hover:border-primary/40 hover:bg-primary/5 transition"
                 >
                   {intent.langLabels[currentLang]}
-                </button>
+                </Link>
               ))}
               {[
                 { label: '🇺🇸 Free Dating', path: '/en/dating' },
@@ -371,14 +362,13 @@ export const Home: React.FC = () => {
                 { label: '🇮🇹 Incontri', path: '/it/incontri' },
                 { label: '🇯🇵 無料出会い', path: '/ja/deai' },
               ].map((routeLink) => (
-                <button
+                <Link
                   key={routeLink.path}
-                  type="button"
-                  onClick={() => navigate(routeLink.path)}
+                  to={routeLink.path}
                   className="rounded-full border border-primary/25 bg-primary/5 px-3.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/15 transition"
                 >
                   {routeLink.label}
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -399,21 +389,19 @@ export const Home: React.FC = () => {
               Recomendações práticas sobre segurança digital, etiqueta cultural e comunicação à distância.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate('/guias')}
+          <Link
+            to="/guias"
             className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
           >
             Ver todos os {GUIAS.length} guias <ArrowRight className="size-4" />
-          </button>
+          </Link>
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {GUIAS.slice(0, 6).map((guia) => (
-            <button
+            <Link
               key={guia.slug}
-              type="button"
-              onClick={() => navigate(`/guias/${guia.slug}`)}
+              to={`/guias/${guia.slug}`}
               className="group flex flex-col justify-between text-left rounded-3xl border border-border bg-card p-6 shadow-soft transition-all hover:border-primary/40 hover:shadow-card"
             >
               <div>
@@ -431,7 +419,7 @@ export const Home: React.FC = () => {
                 <span>Ler artigo completo</span>
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </section>
@@ -489,13 +477,12 @@ export const Home: React.FC = () => {
               Junte-se à comunidade GlobalLove.com agora mesmo. 100% gratuito para maiores de 18 anos.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate(isLoggedIn ? '/descobrir' : '/entrar')}
-            className="min-h-[48px] rounded-full bg-background px-8 py-4 text-sm sm:text-base font-bold text-foreground shadow-soft transition-transform active:scale-95 hover:opacity-95 shrink-0"
+          <Link
+            to={isLoggedIn ? '/descobrir' : '/entrar'}
+            className="inline-flex items-center justify-center min-h-[48px] rounded-full bg-background px-8 py-4 text-sm sm:text-base font-bold text-foreground shadow-soft transition-transform active:scale-95 hover:opacity-95 shrink-0"
           >
             {isLoggedIn ? 'Explorar Perfis' : 'Cadastre-se Grátis'}
-          </button>
+          </Link>
         </div>
         <p className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <ShieldCheck className="size-4 text-primary" />

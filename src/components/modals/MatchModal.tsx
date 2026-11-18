@@ -1,18 +1,15 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, MessageCircle, X, Sparkles } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { buildMatchId } from '../../utils/security';
 
 export const MatchModal: React.FC = () => {
-  const { newMatchModal, closeMatchModal, user, navigate } = useApp();
+  const { newMatchModal, closeMatchModal, user } = useApp();
 
   if (!newMatchModal) return null;
 
-  const handleStartChat = () => {
-    const matchId = user.id ? buildMatchId(user.id, newMatchModal.id) : newMatchModal.id;
-    closeMatchModal();
-    navigate(`/conversas/${matchId}`);
-  };
+  const matchId = user.id ? buildMatchId(user.id, newMatchModal.id) : newMatchModal.id;
 
   return (
     <div
@@ -65,13 +62,13 @@ export const MatchModal: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={handleStartChat}
+          <Link
+            to={`/conversas/${matchId}`}
+            onClick={closeMatchModal}
             className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-brand py-3 px-6 font-semibold text-primary-foreground shadow-soft transition-transform active:scale-95"
           >
             <MessageCircle className="size-5" /> Mandar mensagem
-          </button>
+          </Link>
           <button
             type="button"
             onClick={closeMatchModal}

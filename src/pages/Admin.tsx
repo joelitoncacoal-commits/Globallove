@@ -20,6 +20,7 @@ import {
   Loader2,
   Camera,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { compressImageUpload } from '../utils/security';
@@ -94,13 +95,12 @@ export const Admin: React.FC = () => {
             Esta área é protegida por controle RBAC no servidor (Firestore Rules). Apenas contas autorizadas com e-mail verificado podem acessar dados de moderação.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="min-h-[44px] rounded-full border border-border bg-background px-6 py-2.5 text-xs font-bold text-foreground hover:bg-muted"
+            <Link
+              to="/"
+              className="inline-flex items-center justify-center min-h-[44px] rounded-full border border-border bg-background px-6 py-2.5 text-xs font-bold text-foreground hover:bg-muted"
             >
               Voltar ao Início
-            </button>
+            </Link>
           </div>
         </div>
       </div>

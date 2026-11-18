@@ -17,6 +17,7 @@ import {
   CheckCheck,
   BellRing,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { LANGUAGE_OPTIONS } from '../../i18n/translations';
 import { SupportedLang } from '../../types';
@@ -60,9 +61,12 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 sm:h-20 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Brand Logo */}
-        <button
-          type="button"
-          onClick={() => handleNav('/')}
+        <Link
+          to="/"
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setNotifOpen(false);
+          }}
           className="flex min-h-[44px] items-center gap-2 text-left transition-transform active:scale-95 group"
         >
           <span className="grid size-8 sm:size-9 place-items-center rounded-xl bg-brand text-primary-foreground shadow-soft group-hover:scale-105 transition-transform">
@@ -78,14 +82,17 @@ export const Header: React.FC = () => {
               Global Dating • 92+ Countries
             </span>
           </div>
-        </button>
+        </Link>
 
         {/* Desktop Nav - Authenticated */}
         {isLoggedIn ? (
           <nav aria-label="Principal" className="hidden items-center gap-1 md:flex">
-            <button
-              type="button"
-              onClick={() => handleNav('/descobrir')}
+            <Link
+              to="/descobrir"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                 currentRoute === '/descobrir'
                   ? 'bg-primary/10 text-primary'
@@ -94,10 +101,13 @@ export const Header: React.FC = () => {
             >
               <Flame className="size-4" />
               {t.nav.discover}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/mapa')}
+            </Link>
+            <Link
+              to="/mapa"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                 currentRoute === '/mapa'
                   ? 'bg-primary/10 text-primary'
@@ -106,10 +116,13 @@ export const Header: React.FC = () => {
             >
               <MapPin className="size-4" />
               {t.nav.map}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/mural')}
+            </Link>
+            <Link
+              to="/mural"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                 currentRoute === '/mural'
                   ? 'bg-primary/10 text-primary'
@@ -118,10 +131,13 @@ export const Header: React.FC = () => {
             >
               <Compass className="size-4" />
               {t.nav.mural}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/matches')}
+            </Link>
+            <Link
+              to="/matches"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`relative flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                 currentRoute === '/matches'
                   ? 'bg-primary/10 text-primary'
@@ -135,10 +151,13 @@ export const Header: React.FC = () => {
                   {matches.length}
                 </span>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/conversas')}
+            </Link>
+            <Link
+              to="/conversas"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`relative flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                 currentRoute.startsWith('/conversas')
                   ? 'bg-primary/10 text-primary'
@@ -152,10 +171,13 @@ export const Header: React.FC = () => {
                   {totalUnread}
                 </span>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/perfil')}
+            </Link>
+            <Link
+              to="/perfil"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                 currentRoute === '/perfil'
                   ? 'bg-primary/10 text-primary'
@@ -164,11 +186,14 @@ export const Header: React.FC = () => {
             >
               <User className="size-4" />
               {t.nav.profile}
-            </button>
+            </Link>
             {isOwnerAdmin && (
-              <button
-                type="button"
-                onClick={() => handleNav('/admin')}
+              <Link
+                to="/admin"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setNotifOpen(false);
+                }}
                 className={`flex min-h-[38px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all ml-1 ${
                   currentRoute === '/admin'
                     ? 'bg-rose-600 text-white shadow-soft'
@@ -178,53 +203,68 @@ export const Header: React.FC = () => {
               >
                 <ShieldAlert className="size-3.5" />
                 <span>ADM</span>
-              </button>
+              </Link>
             )}
           </nav>
         ) : (
           /* Desktop Nav - Public (Clean, strictly zero Admin link exposure to unauthenticated guests) */
           <nav aria-label="Navegação pública" className="hidden items-center gap-2 md:flex">
-            <button
-              type="button"
-              onClick={() => handleNav('/descobrir')}
+            <Link
+              to="/descobrir"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
                 currentRoute === '/descobrir' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {t.nav.discover}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/mapa')}
+            </Link>
+            <Link
+              to="/mapa"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
                 currentRoute === '/mapa' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {t.nav.map}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/guias')}
+            </Link>
+            <Link
+              to="/guias"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className={`rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
                 currentRoute === '/guias' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {t.nav.guides}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/entrar')}
+            </Link>
+            <Link
+              to="/entrar"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t.nav.login}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('/entrar')}
+            </Link>
+            <Link
+              to="/entrar"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setNotifOpen(false);
+              }}
               className="rounded-full bg-brand px-4 py-2 text-xs font-semibold text-primary-foreground shadow-soft transition-transform active:scale-95"
             >
               {t.nav.register}
-            </button>
+            </Link>
           </nav>
         )}
 
@@ -391,13 +431,12 @@ export const Header: React.FC = () => {
                                 ? 'bg-emerald-500/15 text-emerald-600'
                                 : 'bg-muted text-foreground';
                             return (
-                              <button
+                              <Link
                                 key={n.id}
-                                type="button"
-                                onClick={async () => {
-                                  if (!n.read) await markNotificationRead(n.id);
+                                to={n.link || '/descobrir'}
+                                onClick={() => {
+                                  if (!n.read) void markNotificationRead(n.id);
                                   setNotifOpen(false);
-                                  if (n.link) handleNav(n.link);
                                 }}
                                 className={`w-full text-left p-2.5 hover:bg-muted/70 transition rounded-xl flex items-start gap-2.5 ${
                                   n.read ? 'opacity-70' : 'bg-primary/5'
@@ -424,7 +463,7 @@ export const Header: React.FC = () => {
                                     {n.createdAt}
                                   </span>
                                 </div>
-                              </button>
+                              </Link>
                             );
                           })
                       )}
@@ -465,13 +504,16 @@ export const Header: React.FC = () => {
                         <Compass className="size-3.5 text-emerald-600 shrink-0" /> Comentários e curtidas no Mural
                       </li>
                     </ul>
-                    <button
-                      type="button"
-                      onClick={() => handleNav('/entrar')}
-                      className="w-full min-h-[42px] rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground shadow-soft"
+                    <Link
+                      to="/entrar"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setNotifOpen(false);
+                      }}
+                      className="flex w-full min-h-[42px] items-center justify-center rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground shadow-soft"
                     >
                       Entrar ou Criar Conta para Ativar
-                    </button>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -527,14 +569,17 @@ export const Header: React.FC = () => {
           </div>
 
           {/* 100% Free Badge */}
-          <button
-            type="button"
-            onClick={() => handleNav('/planos')}
+          <Link
+            to="/planos"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setNotifOpen(false);
+            }}
             className="hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 shadow-soft transition-all hover:bg-emerald-500/25"
           >
             <Sparkles className="size-3 text-emerald-700" />
             100% Free
-          </button>
+          </Link>
 
           {/* Mobile Drawer Trigger */}
           <div className="flex items-center gap-1 md:hidden">
@@ -556,74 +601,74 @@ export const Header: React.FC = () => {
           <div className="flex flex-col gap-2">
             {isLoggedIn ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/perfil')}
+                <Link
+                  to="/perfil"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
                 >
                   <User className="size-5 text-primary" /> {t.nav.profile}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/guias')}
+                </Link>
+                <Link
+                  to="/guias"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
                 >
                   <Compass className="size-5 text-primary" /> {t.nav.guides}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/seguranca')}
+                </Link>
+                <Link
+                  to="/seguranca"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
                 >
                   <ShieldAlert className="size-5 text-emerald-600" /> Segurança & Privacidade
-                </button>
+                </Link>
                 {isOwnerAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => handleNav('/admin')}
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-left font-bold text-rose-700 bg-rose-500/10 border border-rose-500/20"
                   >
                     <ShieldAlert className="size-5 text-rose-600" /> Painel ADM
-                  </button>
+                  </Link>
                 )}
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/descobrir')}
-                  className="min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
+                <Link
+                  to="/descobrir"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
                 >
                   {t.nav.discover}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/mapa')}
-                  className="min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
+                </Link>
+                <Link
+                  to="/mapa"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
                 >
                   {t.nav.map}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/guias')}
-                  className="min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
+                </Link>
+                <Link
+                  to="/guias"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
                 >
                   {t.nav.guides}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/entrar')}
-                  className="min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
+                </Link>
+                <Link
+                  to="/entrar"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center min-h-[44px] rounded-xl px-3 py-2 text-left font-semibold text-foreground hover:bg-muted"
                 >
                   {t.nav.login}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/entrar')}
-                  className="mt-1 min-h-[44px] rounded-xl bg-brand px-3 py-2.5 text-center font-semibold text-primary-foreground"
+                </Link>
+                <Link
+                  to="/entrar"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="mt-1 flex items-center justify-center min-h-[44px] rounded-xl bg-brand px-3 py-2.5 text-center font-semibold text-primary-foreground"
                 >
                   {t.nav.register}
-                </button>
+                </Link>
               </>
             )}
           </div>

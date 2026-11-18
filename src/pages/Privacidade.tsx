@@ -1,10 +1,8 @@
 import React from 'react';
-import { Lock, ShieldCheck } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Lock } from 'lucide-react';
 import { PRIVACIDADE_CONTEUDO } from '../data/institutional';
 
 export const Privacidade: React.FC = () => {
-  const { navigate } = useApp();
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-12">
